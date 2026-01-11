@@ -1,0 +1,23 @@
+# STM32CubeIDE specific files
+Debug/
+Release/
+.metadata/
+.ide.log*
+.lock
+.session
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+*.su
+*.bak
+# 기타 IDE 관련 폴더 제외
+SW4STM32/
+EWARM/
+MDK-ARM/
+# STM32CubeIDE plugins and IDE files (Over 100MB files)
+STM32CubeIDE/
+.metadata/
+.p2/
+.eclipse/
