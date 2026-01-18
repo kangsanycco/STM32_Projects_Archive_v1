@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -104,7 +104,7 @@ int main(void)
   while (1)
   {
 		  div=(float)count/10;
-		  printf(" count=%d, div=%f\r\n",count++,div);
+		  printf(" count=%d, div=%f\r\n",count++, div);
 		  if(count>256)count=0;
 		  HAL_Delay(100);
     /* USER CODE END WHILE */
