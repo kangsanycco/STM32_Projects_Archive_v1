@@ -1,73 +1,91 @@
 /*
  * system_state.h
  *
- *  Created on: Jan 17, 2026
- *      Author: kangs
+ * Created on: Jan 17, 2026
+ * Author: kangs
  */
 
 #ifndef COMMON_SYSTEM_STATE_H_
 #define COMMON_SYSTEM_STATE_H_
 
 #include "config.h"
+#include "error_code.h"
 
 /**
- * @brief 공정 메인 상태 (Finite State Machine) - 현재 어느 시점에 있는지를 나타냄
+ * [그룹 A] 메인 제어 및 시스템 상태
  */
 typedef enum {
-	// 분류 라인 세부 상태
-	STATE_IDLE = 0,			// PLC OFF: 시스템 전체 정지 및 대기
-	STATE_READY,			// PLC ON: 가동 시작, 메인 컨베이어 구동 가능
-    STATE_RUNNING,			// 공정 가동 중 (물체 투입 및 카메라 스캔 중)
-	STATE_ROBOT_WORKING,	// 로봇 가동 중 (대분류 대상물 분류 상태)
-    STATE_TRANSFER_TO_SORT_AGV,	// 분류 컨베이어 가동 (AGV로 물체 배출)
-
-    // 적재 라인 세부 상태
-    STATE_LOAD_STANDBY,     // 적재 대기 및 준비 (AGV 오는 중), 컨베이어가 제자리에 돌아왔는지 확인
-    STATE_LOAD_RECEIVING,   // 적재 컨베이어 가동 중 (AGV로부터 물건 받는 중)
-    STATE_LOAD_COMPLETED,   // 적재 완료 및 컨베이어 정지
-	STATE_EMERGENCY_STOP    // 비상 정지 상태
-} ProcessState_t;
+    STATE_IDLE = 0,             		// 전원 ON 후 UART 가동 승인 대기 (전체 컨베이어 OFF)
+    STATE_MAIN_CONVEY_RUNNING,          // 가동 승인 후 메인/분류 컨베이어 구동 중,
+    STATE_ERROR_STOP,         		    // 시스템 에러 (lastError 참조)
+    STATE_EMERGENCY          		    // 비상 정지
+} MainControlState_t;
 
 /**
- * @brief 카메라 판독 데이터 (로봇 구간 도착 전 선행 정보)
+ * [그룹 B] 로봇 및 AGV 분류 공정
  */
 typedef enum {
-    ITEM_NOT_SCANNED = 0,        // 아직 카메라 구간을 지나지 않음
-    ITEM_SMALL_CLASS,            // 소분류 (로봇 구간 비정지 통과 대상)
-    ITEM_LARGE_CLASS             // 대분류 (로봇 구간 정지 및 AGV 배출 대상)
+    STATE_CONVEY_PAUSED_ROBOT_BUSY,     // 컨베이어 중지, 로봇 작동 중
+    STATE_CONVEY_RUNNING_ROBOT_IDLE,    // 컨베이어 가동, 로봇 중지
+	STATE_SORT_AGV_WAIT,				// AGV 분류 파트 미도착
+    STATE_SORT_AGV_PARKING,          	// AGV 분류 파트에 주차, 대분류 품목 투입
+	STATE_LOAD_AGV_WAIT,				// AGV 적재 파트 미도착
+    STATE_LOAD_AGV_PARKING,          	// AGV 적재 파트에 주차, 대분류 물품 수령 중
+} RobotAgvState_t;
+
+/**
+ * [그룹 C] 리프트 및 랙 적재 공정
+ */
+typedef enum {
+    STATE_LIFT_MOVING,        		    // 목표 층으로 리니어 모터 이동 중
+    STATE_RACK_INSERTING,      		    // 목표 층 도착 후 컨베이어 가동, 랙에 투입
+    STATE_LIFT_RETURNING,      		    // 1층으로 복귀 중
+} LiftRackState_t;
+
+/**
+ * @brief 카메라 판독 데이터
+ */
+typedef enum {
+    ITEM_NONE = 0,
+    ITEM_SMALL,                 // 소분류 (통과)
+    ITEM_LARGE                  // 대분류 (로봇 분류 대상)
 } CameraResult_t;
 
 /**
- * @brief 전체 시스템 상태 관리 장부 (중앙 통제 구조체)- 진행 과정의 데이터
+ * @brief 전체 시스템 상태 관리 장부
  */
 typedef struct {
-    // 1. 시스템 제어 상태
-    ProcessState_t currentState;  // 현재 공정이 무슨 상태인지 나타내는 지표
-    CameraResult_t pendingResult; // 카메라가 미리 보낸 데이터 (로봇 구간의 판단 근거)
-    ErrorCode_t    lastError;     // 발생한 에러를 기록하는 칸
+    // 1. 시스템 제어 및 모니터링
+	// switch 에 넣기 위해 존재함 [ex. switch(currentState)]
+	// ProcessState_t 는 데이터의 형식(타입) 이고, currentState 는 변수이기 때문이다
+	// Enum은 진짜 이름, struct 는 별명이다.
+    ProcessState_t currentState;	 // [결정] 현재 공정 단계 (어디쯤 왔나?)
+    CameraResult_t scanResult;       // [판단] 카메라 판독 결과 (무엇인가?)
+    ErrorCode_t    lastError;		 // [경고] 마지막 에러 코드 (어디가 고장인가?)
 
-    // 2. 실시간 센서 상태 (0: 미감지, 1: 감지)
-    int isPlcActive;              // PLC ON/OFF 상태
-    int isItemInRobotArea;        // 로봇 구간 적외선 센서 (PA10)
-    int isRobotDoneSignal;		  // 로봇으로부터 받은 완료 신호 (PB1)
-    int isSortAgvReady;           // 분류쪽 AGV 도착 여부 (PA8)
-    int isLoadAgvReady;           // 적재쪽 AGV 도착 여부 (PB5)
+    // 2. 물리 센서 실시간 상태 (config.h와 1:1 매칭)
+    int sensor_robot_area;           // PA10: 로봇 구역 물체 감지 (IR)
+    int sensor_robot_done;           // PB2: 로봇 동작 완료 신호 (IN)
+    int sensor_lift_lvl1;            // PA0: 리니어 1층 도착 (근접)
+    int sensor_lift_lvl2;            // PA1: 리니어 2층 도착 (근접)
+    int sensor_rack_full1;           // PA4: 1층 랙 물품 유무 (IR)
+    int sensor_rack_full2;           // PA5: 2층 랙 물품 유무 (IR)
 
-    // 3. 적재/비움 상태 (박제된 적외선 센서)
-    int isAgvFull;               // 분류 파트 AGV 컨베이어 만재 여부 (PB10)
-    int isAgvEmpty;              // 적재 파트 AGV 컨베이어 끝 비워짐 여부 (PB11)
+    // 3. 소프트웨어 플래그 (UART2 수신 데이터 기반)
+    int soft_system_approved;     // UART 가동 승인 여부
+    int soft_agv_sort_ready;      // 분류 AGV 도착 완료 신호
+    int soft_agv_sort_full;       // 분류 AGV 적재 완료 (가득 참)
+    int soft_agv_load_ready;      // 적재 AGV 도착 완료 신호
+    int soft_agv_load_empty;      // 적재 AGV 하차 완료 (비었음)
 
-    // 4. 로봇 제어 상태 (추가)
-    int isRobotBusy;              // [추가] 현재 로봇이 가공 중인지 여부 (Flag)
+    // 4. 구동부 상태 확인용
+    int is_lift_busy;             // 리니어 모터 구동 중 여부
+    int target_lift_floor;        // 리니어 모터 목표 층 (1 or 2)
 
-    // 4. 통계 및 디버깅 데이터
-    uint32_t totalProcessed;      // 총 처리 수량
+    // 5. 통계 데이터
+    uint32_t totalProcessed;
 } SystemStatus_t;
 
-/**
- * @brief 전역 변수 공유 선언
- * app_init.c에서 실제 메모리 할당이 이루어집니다.
- */
 extern SystemStatus_t g_sys_status;
 
 #endif /* COMMON_SYSTEM_STATE_H_ */
