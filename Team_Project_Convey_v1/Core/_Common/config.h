@@ -28,8 +28,8 @@
 
 
 // 3. [PIN] 로봇 인터페이스 (물리 신호 필요 시) - (임시: 서버로 받을지, 핀으로 받을지 고려)
-#define PIN_ROBOT_WORK     GPIOB, GPIO_PIN_3 // 로봇 동작 시작 (OUT), UART2 PA2와 인터럽트 충돌은 없음
-#define PIN_ROBOT_DONE     GPIOB, GPIO_PIN_2 // 로봇 동작 완료 (IN), UART2 PA3과 인터럽트 충돌은 없음
+#define PIN_ROBOT_WORK     GPIOC, GPIO_PIN_7 // 로봇 동작 시작 (OUT), UART2 PA2와 인터럽트 충돌은 없음
+#define PIN_ROBOT_DONE     GPIOC, GPIO_PIN_6 // 로봇 동작 완료 (IN), UART2 PA3과 인터럽트 충돌은 없음
 
 
 // 4. 컨베이어 모터 채널 (PCA9685)
@@ -44,7 +44,7 @@
 
 
 // 6. [HAL] 통신 핸들
-extern UART_HandleTypeDef huart2;	// PC 서버(OPC-UA 연동), 비전, AGV EPDLXJ
+extern UART_HandleTypeDef huart2;	// PC 서버(OPC-UA 연동), 비전, AGV 데이터
 extern I2C_HandleTypeDef  hi2c1;	// PCA9685 드라이버
 #define UART_PC_SERVER    &huart2
 #define I2C_MOTOR_DRV     &hi2c1

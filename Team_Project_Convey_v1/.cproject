@@ -51,12 +51,12 @@
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_App&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Bsp&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Common&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Driver&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Task&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\Inc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_App&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Bsp&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Driver&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Task&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\Inc&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.2040568234" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -106,12 +106,12 @@
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"/>
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_App&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Bsp&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Common&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Driver&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\_Task&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\STM32\STM32CubeIDE_1.17.0\Team_Project_Convey_v1\Core\Inc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_App&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Bsp&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Driver&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\_Task&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\codelab\Desktop\STM32\팀프로젝트\STM32_Projects_Archive_v1\Team_Project_Convey_v1\Core\Inc&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1039266527" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
