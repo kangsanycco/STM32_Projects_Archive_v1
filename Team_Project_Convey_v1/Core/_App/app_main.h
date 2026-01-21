@@ -5,8 +5,8 @@
  *      Author: kangs
  */
 
-#ifndef APP_APP_INIT_H_
-#define APP_APP_INIT_H_
+#ifndef APP_APP_MAIN_H_
+#define APP_APP_MAIN_H_
 
 /**
  * 시스템의 모든 레이어(Driver, Bsp, Task, App)를
@@ -15,4 +15,4 @@
 void APP_Init(void);
 
 
-#endif /* APP_APP_INIT_H_ */
+#endif /* APP_APP_MAIN_H_ */
