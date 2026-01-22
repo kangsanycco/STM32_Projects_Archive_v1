@@ -19,7 +19,8 @@ typedef enum {
     STATE_IDLE = 1,             			// 전원 ON 후 UART 가동 승인 대기 (전체 컨베이어 OFF)
     STATE_RUNNING = 2,       	    		// 가동 승인 후 메인/분류 컨베이어 구동 중,
 	STATE_STOP = 3,							// 일반 정지
-    STATE_EMERGENCY = 4,        		  	// 비상 정지
+	STATE_EMERGENCY_ROBOT = 4,				// 비상 정지 중 로봇 잔여 작업
+    STATE_EMERGENCY = 5,        		  	// 비상 정지
 } MainControlState_t;
 
 /**
@@ -63,22 +64,22 @@ typedef enum {
 
     // --- 100번대: 하드웨어 보호 (즉시 중단 필요) ---
     // 근접 센서(PA0, PA1)가 범위를 벗어났을 때 즉시 감지
-    ERR_LIFT_OVERRUN_1F = 101,          	// 1층 범위 초과 (PA0 감지, 더 내려가면 충돌 위험)
-    ERR_LIFT_OVERRUN_2F = 102,         	    // 2층 범위 초과 (PA1 감지, 더 올라가면 충돌 위험)
-    ERR_LIFT_HOMING_FAIL = 103,         	// 초기화 시 1층 센서를 찾지 못함 (구동 불능)
-	ERR_EMERGENCY_STOP_BUTTON = 104,    	// 비상 정지(사용자가 중단)
+    ERR_LIFT_OVERRUN_1F = 11,          	// 1층 범위 초과 (PA0 감지, 더 내려가면 충돌 위험)
+    ERR_LIFT_OVERRUN_2F = 12,         	    // 2층 범위 초과 (PA1 감지, 더 올라가면 충돌 위험)
+    ERR_LIFT_HOMING_FAIL = 13,         	// 초기화 시 1층 센서를 찾지 못함 (구동 불능)
+	ERR_EMERGENCY_STOP_BUTTON = 14,    	// 비상 정지(사용자가 중단)
 
 	// --- 200번대: 공정이 멈춰서 확인이 필요한 상황 (공정 지연) ---
-    ERR_ROBOT_DONE_TIMEOUT = 201,       	// 로봇 작업이 끝났다는 신호(PC6)를 주지 않음
-    ERR_AGV_SIGNAL_TIMEOUT = 202,      		// AGV 도착/완료 신호 수신 지연 (AGV 확인 필요)
-    ERR_ROBOT_PICK_FAILURE = 203,     				// 적외선 센서에 물체가 계속 감지됨 (로봇 오작동)
-    ERR_LIFT_TARGET_POSITION_FAIL = 204,    // 리프트가 목표 스텝(위치)에 도달하지 못함 (탈조, 걸림 의심)
+    ERR_ROBOT_DONE_TIMEOUT = 21,       	// 로봇 작업이 끝났다는 신호(PC6)를 주지 않음
+    ERR_AGV_SIGNAL_TIMEOUT = 22,      		// AGV 도착/완료 신호 수신 지연 (AGV 확인 필요)
+    ERR_ROBOT_PICK_FAILURE = 23,     				// 적외선 센서에 물체가 계속 감지됨 (로봇 오작동)
+    ERR_LIFT_TARGET_POSITION_FAIL = 24,    // 리프트가 목표 스텝(위치)에 도달하지 못함 (탈조, 걸림 의심)
 
 	// --- 300번대: 통신이 안 되어 제어가 불가능한 상황 (연결 불량) ---
-	ERR_UART2_DISCONNECTED = 301,  // PC 서버(OPC-UA 연동)와 연결 끊김
-	ERR_I2C1_DISCONNECTED = 302,      	    // 서보 드라이버(PCA9685) I2C 통신 두절
+	ERR_UART2_DISCONNECTED = 31,  // PC 서버(OPC-UA 연동)와 연결 끊김
+	ERR_I2C1_DISCONNECTED = 32,      	    // 서보 드라이버(PCA9685) I2C 통신 두절
 
-    ERR_SYSTEM_UNKNOWN = 999            	// 정의되지 않은 기타 에러
+    ERR_SYSTEM_UNKNOWN = 99            	// 정의되지 않은 기타 에러
 } ErrorCode_t;
 
 /**
@@ -90,7 +91,7 @@ typedef struct {
 	RobotAgvState_t    robotState;   // <--- 로봇 상세 상태 저장
 	LiftRackState_t    liftState;    // <--- 리프트 상세 상태 저장
 	ErrorCode_t        lastError;    // <--- 현재 에러 상태 저장
-
+	// Enum 함수에서 골라 담으면 된다. 이 형식이 아니면 소속 Enum을 사용하지 않는 것을 추천한다
 
 	// 2. 카메라 데이터
     int is_scan_done;     // [추가] 판독이 완료되었는가? (0:대기/처리완료, 1:새로운데이터도착)
@@ -118,7 +119,7 @@ typedef struct {
 
     int is_robot_work;    			// 로봇에게 시작하라는 명령, 출력(0:OFF, 1:ON)
 
-    int is_lift_homed;         		// 원점 복귀 완료 여부. 재부팅 후 리니어 모터가 중간에 위치하는 경우, 강제로 밑으로 내려가 원점(1층)을 찍게 만듦 (0:미완료/이동불가, 1:완료/이동가능)
+    int 	is_lift_homed;         	// 원점 복귀 완료 여부. 재부팅 후 리니어 모터가 중간에 위치하는 경우, 강제로 밑으로 내려가 원점(1층)을 찍게 만듦 (0:미완료/이동불가, 1:완료/이동가능)
     int32_t lift_current_step; 		// 리니어 모터 현재 위치 (펄스 카운트 값)
 
     int8_t  lift_dir_state;    		// PIN_STEP_LIFT_DIRECTION (PB13) 현재 방향 (0:Up, 1:Down, 여러 상태로 확장될 가능성이 있기 때문에 이름으로 is를 사용하지 않음)

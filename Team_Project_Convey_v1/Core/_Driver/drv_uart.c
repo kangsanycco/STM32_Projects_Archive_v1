@@ -30,7 +30,8 @@ void DRV_UART_RxUpdate(uint8_t* p) {		// 0부터 255까지의 숫자를 갱신�
     g_sys_status.rx_uart2_approved = p[1];
 
     // 만약 긴급 정지 명령(2)이 들어오면 즉시 메인 상태 변경
-    if(p[1] == 2) g_sys_status.mainState = STATE_EMERGENCY;
+    if(p[1] == 2) g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+    // STATE_EMERGENCY_ROBOT 을 거친 후, STATE_EMERGENCY 상태가 된다
 
     // 3. 컨베이어 속도 (Byte 2, 3, 4)
     g_sys_status.speed_main_convey = p[2];
