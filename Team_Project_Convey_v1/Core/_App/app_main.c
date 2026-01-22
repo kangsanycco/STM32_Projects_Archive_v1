@@ -6,7 +6,6 @@
  */
 
 #include "system_state.h"
-#include "error_code.h"
 #include "includes.h"
 #include "config.h"
 
