@@ -7,7 +7,7 @@
 
 
 #include "config.h"      // I2C_MOTOR_DRV(hi2c1) 정의 참조
-#include "error_code.h"  // 전송 실패 시 에러 상태 보고용
+#include "system_state.h"
 
 // 전송 상태 플래그: DMA 전송 중 중복 요청을 방지하기 위함
 static volatile uint8_t i2c_tx_in_progress = 0; 	// 0일 시 통로 개방. 세마포어 구현

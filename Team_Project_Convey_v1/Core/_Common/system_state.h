@@ -15,11 +15,11 @@
  * [그룹 A] 메인 제어 및 시스템 상태
  */
 typedef enum {
-	STATE_BOOT = 0,						// 전원 ON 직후 초기화 대기
+	STATE_BOOT = 0,							// 전원 ON 직후와 초기화 작업
     STATE_IDLE = 1,             			// 전원 ON 후 UART 가동 승인 대기 (전체 컨베이어 OFF)
     STATE_RUNNING = 2,       	    		// 가동 승인 후 메인/분류 컨베이어 구동 중,
-    STATE_EMERGENCY = 3,        		  	// 비상 정지
-	STATE_STOP = 4							// 일반 정지
+	STATE_STOP = 3,							// 일반 정지
+    STATE_EMERGENCY = 4,        		  	// 비상 정지
 } MainControlState_t;
 
 /**
@@ -30,8 +30,10 @@ typedef enum {
     STATE_CONVEY_RUNNING_ROBOT_IDLE = 1,    // 컨베이어 가동, 로봇 중지
 	STATE_SORT_AGV_WAIT = 2,				// AGV 분류 파트 미도착
     STATE_SORT_AGV_PARKING = 3,          	// AGV 분류 파트에 주차, 대분류 품목 투입
-	STATE_LOAD_AGV_WAIT = 4,				// AGV 적재 파트 미도착
-    STATE_LOAD_AGV_PARKING = 5,          	// AGV 적재 파트에 주차, 대분류 물품 수령 중
+	STATE_SORT_AVG_FULL = 4,				// AGV 분류 파트에 물품 적재 완료
+	STATE_LOAD_AGV_WAIT = 5,				// AGV 적재 파트 미도착
+    STATE_LOAD_AGV_PARKING = 6,          	// AGV 적재 파트에 주차, 대분류 물품 수령 중
+	STATE_LOAD_AGV_EMPTY = 7				// AGV 적재 파트에 물품 비움 완료
 } RobotAgvState_t;
 
 /**
@@ -49,7 +51,7 @@ typedef enum {
  */
 typedef enum {
     ITEM_NONE = 0,
-    ITEM_LARGE                  // 대분류 (로봇 분류 대상)
+    ITEM_LARGE = 1,                		    // 대분류 (로봇 분류 대상)
 } CameraResult_t;
 
 
@@ -102,11 +104,11 @@ typedef struct {
     int sensor_rack_full2;          // PA5: 2층 랙 물품 유무 (IR)
 
     // 4. 소프트웨어 플래그 (UART2 수신 데이터 기반)
-    int soft_system_approved;       // UART 가동 승인 여부
-    int soft_agv_sort_parking;      // 분류 AGV 주차 완료 신호
-    int soft_agv_sort_full;         // 분류 AGV 적재 완료 (가득 참)
-    int soft_agv_load_parking;      // 적재 AGV 주차 완료 신호
-    int soft_agv_load_empty;        // 적재 AGV 하차 완료 (비었음)
+    int rx_uart2_approved;       	// UART 가동 승인 여부
+    int agv_sort_parking;      		// 분류 AGV 주차 완료 신호
+    int agv_sort_full;        		// 분류 AGV 적재 완료 (가득 참)
+    int agv_load_parking;      		// 적재 AGV 주차 완료 신호
+    int agv_load_empty;        		// 적재 AGV 하차 완료 (비었음)
 
     // 5. 구동부 출력 상태 (출력 - PCA9685 & STEP & ROBOT_WORK)
     // 하드웨어에 명령을 내린 후 "현재 상태"를 기억해야 논리적 충돌이 안 생깁니다.
@@ -126,7 +128,7 @@ typedef struct {
 
     // 6. 통계 데이터 (임시)
     uint32_t totalProcessed;
-} DeviceState;
+} SystemStatus_t;
 
 extern SystemStatus_t g_sys_status;
 // #include 의 경우는 데이터를 참조만 하고 메모리를 공유하지 않는다 (참조 파일의 데이터를 바꿔도 원본은 바뀌지 않음)

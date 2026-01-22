@@ -5,8 +5,8 @@
  * Author: kangs
  */
 
+#include <function.h>
 #include "system_state.h"
-#include "includes.h"
 #include "config.h"
 
 // 추후 구현될 계층들 포함

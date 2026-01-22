@@ -6,9 +6,9 @@
  */
 
 
+#include "../_Common/function.h"
 #include "system_state.h"
 #include "config.h"
-#include "includes.h"
 
 
 // 1. PCA9685 레지스터 및 주소 정의

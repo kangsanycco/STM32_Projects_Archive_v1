@@ -8,7 +8,7 @@
 
 
 #include "config.h"
-#include "app_event.h"  // 사건 보고를 위해 필요
+#include "system_state.h"  // 사건 보고를 위해 필요
 
 /**
  * @brief GPIO 외부 인터럽트 콜백 함수

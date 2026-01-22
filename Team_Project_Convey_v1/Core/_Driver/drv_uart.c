@@ -6,67 +6,76 @@
  */
 
 
-#include "main.h"
-#include "config.h"
-#include "system_state.h"
-#include <stdio.h>
-#include <string.h>
-
-// 전송이 완료되었는지 확인하는 깃발 (0: 전송중, 1: 완료/대기)
-volatile uint8_t g_uart_tx_ready = 1;	// 실시간 확인을 해야 하는 변수
-
-/**
- * @brief printf가 호출될 때 내부적으로 실행되는 함수
+/*
+ * drv_uart.c
+ * 설계된 8바이트 고정 패킷 규격을 완벽히 준수합니다.
  */
-int __io_putchar(int ch) {		//  printf가 글자를 출력할 때 내부적으로 한 글자씩 호출하는 출구 함수
-    static uint8_t temp_ch;		// 매개 변수로 받은 ch 가 사라질 우려가 있어, temp_ch 에 보관할 임시저장소 형성
-    temp_ch = (uint8_t)ch;		// printf가 준 데이터(int)를 통신 규격에 맞는 크기(uint8_t) 로 형태를 바꿔 저장
+#include "function.h"
 
-    // 1. 이전 전송이 끝날 때까지는 잠시 기다립니다 (안전 장치)
-    while (g_uart_tx_ready == 0);	// 0이라면 반복하고, 1이라면 통과합니다
-    g_uart_tx_ready = 0;	// 1을 곧바로 0으로 바꿉니다
+uint8_t rx_uart2_data[8]; // DMA 수신 버퍼
 
-    // 2. 인터럽트 방식으로 한 글자 보냅니다
-    if (HAL_UART_Transmit_IT(&UART_PC_SERVER, &temp_ch, 1) != HAL_OK) { // 전송을 시도해보고, 그 전송이 실패했다면, HAL_OK: 명령이 성공적으로 전달
-        g_uart_tx_ready = 1; // 실패 시 다시 준비 상태로
-        return -1;	// 반환에 실패했음을 알림 (-1은 데이터 범위에 들어갈 수 없다)
+// UART 초기화: DMA Circular 모드 설정 권장
+void DRV_UART_Init(void) {
+    HAL_UART_Receive_DMA(UART_PC_SERVER, rx_uart2_data, 8);
+}
+
+// 패킷 해석: 수신 (PC -> MCU)
+void DRV_UART_RxUpdate(uint8_t* p) {		// 0부터 255까지의 숫자를 갱신하여 저장
+    // 1. STX/ETX 검증
+    if (p[0] != 0xFE || p[7] != 0xFF) return;
+    // 첫 번째 바이트가 0xFE 가 아니거나, 여덟 번째 바이트가 0xFF이 아니라면, 가짜 데이터니까 해석하지 말고 무시하라는 뜻
+    // 전기적 노이즈로 데이터가 한 칸씩 밀려 들어옴을 방지
+
+    // 2. 시스템 제어 (Byte 1)
+    g_sys_status.rx_uart2_approved = p[1];
+
+    // 만약 긴급 정지 명령(2)이 들어오면 즉시 메인 상태 변경
+    if(p[1] == 2) g_sys_status.mainState = STATE_EMERGENCY;
+
+    // 3. 컨베이어 속도 (Byte 2, 3, 4)
+    g_sys_status.speed_main_convey = p[2];
+    g_sys_status.speed_sort_convey = p[3];
+    g_sys_status.speed_load_convey = p[4];
+
+    // 4. 공정 플래그 (Byte 5 - Bit 분리)
+    g_sys_status.agv_sort_parking = (p[5] >> 0) & 0x01;
+    g_sys_status.agv_sort_full    = (p[5] >> 1) & 0x01;
+    g_sys_status.agv_load_parking = (p[5] >> 2) & 0x01;
+    g_sys_status.agv_load_empty   = (p[5] >> 3) & 0x01;
+    g_sys_status.is_scan_done     = (p[5] >> 4) & 0x01;
+    // & 0x01 의 기능: 해당되지 않는 비트를 깨끗하게 비우고, 그 자리의 비트만 추출하기 위해서이다.
+    // 0과 1만 취급하고 나머지 비트는 취급하지 않겠다는 로직이다
+}
+
+// 상태 보고: 송신 (MCU -> PC)
+void DRV_UART_TxReport(void) {		// 값을 송신
+    uint8_t tx_p[8] = {0,};
+    // 배열의 모든 칸을 0으로 비우라는 함수
+    // 비어진 Reserved 데이터에 불특정한 숫자를 넣지 않고 0으로 통일하겠다는 함수
+
+    tx_p[0] = 0xFE; // STX
+    tx_p[1] = (uint8_t)g_sys_status.mainState; // 통합 공정 상태
+
+    // 물리 센서 상태 비트 매핑 (Byte 2)
+    uint8_t s = 0;
+    if (g_sys_status.sensor_lift_level_1) s |= (1 << 0);	// s의 0번 스위치를 올려라
+    if (g_sys_status.sensor_lift_level_2) s |= (1 << 1);	// s의 1번 스위치를 올려라
+    if (g_sys_status.sensor_robot_area)   s |= (1 << 2);	// s의 2번 스위치를 올려라
+    if (g_sys_status.sensor_rack_full1)   s |= (1 << 3);	// s의 3번 스위치를 올려라
+    if (g_sys_status.sensor_rack_full2)   s |= (1 << 4);	// s의 4번 스위치를 올려라
+    if (g_sys_status.sensor_robot_done)   s |= (1 << 5);	// s의 5번 스위치를 올려라
+    tx_p[2] = s;
+    // 다른 비트를 건들지 않고, 해당 비트 자리를 1로 만들라는 함수
+    // 6개의 상태의 데이터 전부를 갱신하지 않고, 통신을 축소하는 방법
+
+    tx_p[7] = 0xFF; // ETX
+
+    HAL_UART_Transmit_DMA(UART_PC_SERVER, tx_p, 8);
+}
+
+// DMA 콜백
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) {
+        DRV_UART_RxUpdate(rx_uart2_data);
     }
-
-    return ch;	// printf 에게 데이터 반환. __io_putchar 함수가 끝났으므로, __io_putchar에 다음 글자가 투입됩니다.
 }
-
-/**
- * @brief PC 서버(OPC-UA 대응)로 현재 시스템 장부의 핵심 데이터를 보고함
- * 흐름도 6번에 해당함.
- */
-void UART_ReportStatus(void) {		//
-    // [보고 양식]
-    // PLC상태, 현재공정상태, 카메라결과, 로봇작업중여부, 총처리수량
-    // 예: 1,2,1,0,15\n
-    printf("%d,%d,%d,%d,%lu\r\n", 		// __io_putchar 함수 호출
-           g_sys_status.isPlcActive,
-           g_sys_status.currentState,
-           g_sys_status.pendingResult, // 보류
-           g_sys_status.isRobotBusy,
-           g_sys_status.totalProcessed);  // 보류
-}
-
-/**
- * @brief UART 전송이 완료되면 자동으로 호출되는 함수 (Callback)
- * CubeMX가 만든 인터럽트 시스템이 이 함수를 찾아와 실행합니다.
- */
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == UART_PC_SERVER.Instance) {		// 현재 huart의 주소가 huart2의 주소라면
-        // 전송이 끝났으니 다시 준비 상태로 만듭니다.
-        g_uart_tx_ready = 1;
-    }
-}
-
-
-// 부가 설명
-// 0. 초기 상태: 언제든 데이터(Hello)를 보낼 수 있는 상태 (g_uart_tx_ready = 1)
-// 1. 대기 단계: [while(ready == 0)] (H)값이 들어오면 통과시킵니다. (g_uart_tx_ready = 1)
-// 2. 잠금 단계: [ready = 0] (H)값이 통과하면서 ready를 0으로 만들었기 때문에, 다른 글자(e)가 들어오면 while에서 멈추게 됩니다. (g_uart_tx_ready = 0)
-// 3. 발송 시작: [HAL] 데이터를 쏘고 있지만, 여전히 잠금 상태 (g_uart_tx_ready = 0)
-// 4. 전송 완료: [return] H의 전송이 끝낫지만, 아직 보고(Callback) 전이라 문은 잠겨있습니다. 이 때 __io_putchar 의 함수 사용이 끝났으므로 e 투입이 진행됩니다
-// 5. 해제 단계: [TxCpltCallback] 보고 완료. 다음 글자가 들어올 수 있게 문을 엽니다 (g_uart_tx_ready = 1)
