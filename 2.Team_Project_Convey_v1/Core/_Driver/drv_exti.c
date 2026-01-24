@@ -1,45 +1,62 @@
 /*
  * drv_exti.c
- *
- *  Created on: Jan 17, 2026
- *      Author: kangs
  */
-
-
-
 #include "config.h"
-#include "system_state.h"  // 사건 보고를 위해 필요
+#include "system_state.h"
+#include "function.h"
 
 /**
- * @brief GPIO 외부 인터럽트 콜백 함수
- * STM32 HAL 라이브러리에서 핀 신호가 바뀌면 자동으로 호출됨
+ * @brief EXTI 인터럽트 통합 콜백 함수
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    switch (GPIO_Pin)
-    {
-        // 1. AGV 도착 감지 (PA8 - 분류쪽, PB5 - 적재쪽)
-        case GPIO_PIN_8:
-                APP_EVENT_Post(EVENT_AGV_SORT_ARRIVED);     // 핀8 인터럽트 발생 -> 분류 AGV 도착
-                break;
+    // 1. 리니어 1층 (PA0) - 원점 및 하강 중 급제동
+    if (GPIO_Pin == GPIO_PIN_0) {
+        g_sys_status.sensor_lift_1f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_1F);
 
-        case GPIO_PIN_5:
-                APP_EVENT_Post(EVENT_AGV_LOAD_ARRIVED);     // 핀5 인터럽트 발생 -> 적재 AGV 도착
-                break;
+        if (g_sys_status.sensor_lift_1f) {
+            // [추가] 하강 중 센서 감지 시 DMA 즉시 정지 (치명적 오류 방지)
+            if (g_sys_status.liftDirection == LIFT_DIR_DOWN) {
+                HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
+                g_sys_status.is_lift_busy = 0;
+                g_sys_status.current_step_pos = 0;
+                g_sys_status.lift_current_floor = 1;
+                g_sys_status.liftDirection = LIFT_DIR_STOP;
+            }
 
-        case GPIO_PIN_10:
-                APP_EVENT_Post(EVENT_ITEM_ENTER_ROBOT_ZONE); // 핀10 인터럽트 발생 -> 로봇 존 진입
-                break;
+            // 초기화 모드에서 영점 완료 처리
+            if (g_sys_status.mainState == STATE_BOOT) {
+                g_sys_status.is_lift_homed = 1;
+            }
+        }
+    }
 
-        // 2. 로봇 작업 완료 신호 (PB1) - (보류) 중이었으나 인터럽트로 대기
-//        case GPIO_PIN_1:
-//            // "로봇이 활성화 신호를 주었는가?" -> 문장이 자연스럽게 읽힘
-//            if (HAL_GPIO_ReadPin(PIN_ROBOT_DONE) == ROBOT_ACTIVE_SIGNAL) {
-//                APP_EVENT_Post(EVENT_ROBOT_WORK_COMPLETE);
-//            }
-//            break;
+    // 2. 리니어 2층 (PA1) - 오버런 감지 및 급제동
+    else if (GPIO_Pin == GPIO_PIN_1) {
+        g_sys_status.sensor_lift_2f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_2F);
 
-        default:
-            break;
+        if (g_sys_status.sensor_lift_2f) {
+            // [추가] 상승 중 오버런 센서 감지 시 DMA 즉시 정지
+            if (g_sys_status.liftDirection == LIFT_DIR_UP) {
+                HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
+                g_sys_status.is_lift_busy = 0;
+                g_sys_status.lastError = ERR_LIFT_OVERRUN_2F;
+                g_sys_status.liftDirection = LIFT_DIR_STOP;
+            }
+        }
+    }
+
+    // 3. 로봇 구역 (PA10)
+    else if (GPIO_Pin == GPIO_PIN_10) {
+        g_sys_status.sensor_robot_area = HAL_GPIO_ReadPin(PIN_SENSOR_ROBOT_AREA);
+    }
+
+    // 4. 로봇 완료 (PC6)
+    else if (GPIO_Pin == GPIO_PIN_6) {
+        g_sys_status.sensor_robot_done = HAL_GPIO_ReadPin(PIN_ROBOT_DONE);
+        if (g_sys_status.sensor_robot_done) {
+            g_sys_status.is_robot_work = 0;
+            HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
+        }
     }
 }

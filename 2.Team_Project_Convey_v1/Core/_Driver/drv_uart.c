@@ -10,9 +10,12 @@
  * drv_uart.c
  * 설계된 8바이트 고정 패킷 규격(v1.1)을 완벽히 준수합니다.
  */
+#include "config.h"
+#include "system_state.h"
 #include "function.h"
 
 uint8_t rx_uart2_data[8]; // DMA 수신 버퍼 (PC -> MCU)
+static uint8_t tx_uart2_data[8]; // 송신용 장부 (static을 붙여서 TxReport 함수가 끝나도 유지되게 함)
 
 void DRV_UART_Init(void) {
     // UART 수신 시작 (DMA Circular 모드 설정 전제)
@@ -48,15 +51,12 @@ void DRV_UART_RxUpdate(uint8_t* p) {
 
 // 상태 보고: 송신 (MCU -> PC)
 void DRV_UART_TxReport(void) {
-    uint8_t tx_p[8] = {0,}; // Reserved 영역 0으로 초기화
 
-    tx_p[0] = 0xFE; // STX
-    tx_p[1] = (uint8_t)g_sys_status.mainState; // 통합 공정 상태 보고
-
-    // 3종 컨베이어 현재 속도 보고 (Byte 2, 3, 4)
-    tx_p[2] = (uint8_t)g_sys_status.speed_main_convey;
-    tx_p[3] = (uint8_t)g_sys_status.speed_sort_convey;
-    tx_p[4] = (uint8_t)g_sys_status.speed_load_convey;
+    tx_uart2_data[0] = 0xFE; // STX
+    tx_uart2_data[1] = (uint8_t)g_sys_status.mainState; // 통합 공정 상태 보고
+    tx_uart2_data[2] = (uint8_t)g_sys_status.speed_main_convey;
+    tx_uart2_data[3] = (uint8_t)g_sys_status.speed_sort_convey;
+    tx_uart2_data[4] = (uint8_t)g_sys_status.speed_load_convey;
 
     // 장치 상태 통합 비트 매핑 (Byte 5)
     uint8_t s = 0;
@@ -66,14 +66,13 @@ void DRV_UART_TxReport(void) {
     if (g_sys_status.sensor_lift_1f) s |= (1 << 4); // Bit 4: 1층 도착
     if (g_sys_status.sensor_lift_2f) s |= (1 << 5); // Bit 5: 2층 도착
     if (g_sys_status.sensor_robot_done) s |= (1 << 6); // Bit 6: PC6 로봇완료신호
-    tx_p[5] = s;
+    tx_uart2_data[5] = s;
 
     // 리프트 위치 정보 (Byte 6)
-    tx_p[6] = (uint8_t)g_sys_status.lift_current_floor; // 1층 또는 2층
+    tx_uart2_data[6] = (uint8_t)g_sys_status.lift_current_floor; // 1층 또는 2층
+    tx_uart2_data[7] = 0xFF; // ETX
 
-    tx_p[7] = 0xFF; // ETX
-
-    HAL_UART_Transmit_DMA(UART_PC_SERVER, tx_p, 8);
+    HAL_UART_Transmit_DMA(UART_PC_SERVER, tx_uart2_data, 8);
 }
 
 // DMA 수신 콜백 함수

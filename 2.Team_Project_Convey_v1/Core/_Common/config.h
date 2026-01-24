@@ -14,11 +14,11 @@
 
 // 1. [PIN] 센서류 (입력)
 // 1속성: PIN_Sensor / 2속성: 주체 / 3속성: 대상
-#define PIN_SENSOR_ROBOT_AREA    	GPIOA, GPIO_PIN_10  // 로봇 작업 영역 (적외선)
-#define PIN_SENSOR_LIFT_LEVEL_1  	GPIOA, GPIO_PIN_0   // 리니어 1층 도착 확인 (근접)
-#define PIN_SENSOR_LIFT_LEVEL_2  	GPIOA, GPIO_PIN_1   // 리니어 2층 도착 확인 (근접)
-#define PIN_SENSOR_RACK_LEVEL_1	 	GPIOA, GPIO_PIN_4   // 1층 랙 물품 유무 (적외선)
-#define PIN_SENSOR_RACK_LEVEL_2	 	GPIOA, GPIO_PIN_5   // 2층 랙 물품 유무 (적외선)
+#define PIN_SENSOR_ROBOT_AREA   GPIOA, GPIO_PIN_10  // 로봇 작업 영역 (적외선)
+#define PIN_SENSOR_LIFT_1F  	GPIOA, GPIO_PIN_0   // 리니어 1층 도착 및 원점 (근접)
+#define PIN_SENSOR_LIFT_2F  	GPIOA, GPIO_PIN_1   // 리니어 2층 범위 이탈 감지 (근접)
+#define PIN_SENSOR_RACK_1F	 	GPIOA, GPIO_PIN_4   // 1층 랙 물품 유무 (적외선)
+#define PIN_SENSOR_RACK_2F	 	GPIOA, GPIO_PIN_5   // 2층 랙 물품 유무 (적외선)
 
 
 // 2. [PIN] 리니어 스텝 모터 (42H48H1704A2)

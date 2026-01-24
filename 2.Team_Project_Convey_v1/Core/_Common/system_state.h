@@ -87,9 +87,9 @@ typedef enum {
 
 typedef struct {
     CameraResult_t items[VISION_QUEUE_SIZE];
-    int head;
-    int tail;
-    int count;
+    uint8_t head;
+    uint8_t tail;
+    uint8_t count;
 } VisionQueue_t;
 
 /**
@@ -100,43 +100,43 @@ typedef struct {
     MainControlState_t mainState;      // 통합 시스템 상태
     SortState_t        sortState;      // 분류 공정 상태
     LoadState_t        loadState;      // 적재 공정 상태
-    LiftDir_t          liftDirection;  // 리프트 이동 방향 상태 (추가)
-    CameraResult_t     currentScan;    // 현재 스캔된 물체 타입 (추가)
+    LiftDir_t          liftDirection;  // 리프트 이동 방향 상태 (0:정지, 1:상승, 2:하강)
+    CameraResult_t     currentScan;    // 현재 스캔된 물체 타입
     ErrorCode_t        lastError;      // 시스템 에러 상태
 
     // 2. 카메라 데이터 (Queue 관리)
     VisionQueue_t      visionQ;        // 비전 데이터를 순서대로 저장하는 FIFO 큐
-    int                is_scan_done;   // 비전 PC로부터 새로운 판독 데이터가 수신됨을 알림
+    uint8_t                is_scan_done;   // 비전 PC로부터 새로운 판독 데이터가 수신됨을 알림
 
     // 3. 물리 센서 실시간 상태 (PA/PC Input 핀 직접 매칭)
-    int sensor_robot_area;             // PA10: 로봇 분류 구역 내 물체 감지 유무
-    int sensor_robot_done;             // PC6: 로봇으로부터 작업 완료 신호 수신 여부
-    int sensor_lift_1f;                // PA0: 리프트 1층(영점) 도달 확인 센서
-    int sensor_lift_2f;                // PA1: 리프트 2층 도달 확인 센서
-    int sensor_rack_full1;             // PA4: 1층 적재함 물품 존재 여부
-    int sensor_rack_full2;             // PA5: 2층 적재함 물품 존재 여부
+    uint8_t sensor_robot_area;             // PA10: 로봇 분류 구역 내 물체 감지 유무
+    uint8_t sensor_robot_done;             // PC6: 로봇으로부터 작업 완료 신호 수신 여부
+    uint8_t sensor_lift_1f;                // PA0: 리프트 1층(영점) 도달 확인 센서
+    uint8_t sensor_lift_2f;                // PA1: 리프트 2층 도달 확인 센서
+    uint8_t sensor_rack_full1;             // PA4: 1층 적재함 물품 존재 여부
+    uint8_t sensor_rack_full2;             // PA5: 2층 적재함 물품 존재 여부
 
     // 4. 소프트웨어 플래그 (UART2 Rx 8바이트 패킷 데이터 기반)
-    int rx_uart2_approved;       	   // 서버로부터의 가동 승인 신호 (Run/Stop)
-    int rx_agv_sort_arrived;      	   // 분류부 AGV 도착 (상차 준비됨)
-    int rx_agv_sort_departed;          // 분류부 AGV 출발 (상차 끝남)
-    int rx_agv_load_arrived;      	   // 적재부 AGV 도착 (하차 준비됨)
-    int rx_agv_load_departed;          // 적재부 AGV 출발 (하차 끝남)
+    uint8_t rx_uart2_approved;       	   // 서버로부터의 가동 승인 신호 (Run/Stop)
+    uint8_t rx_agv_sort_arrived;      	   // 분류부 AGV 도착 (상차 준비됨)
+    uint8_t rx_agv_sort_departed;          // 분류부 AGV 출발 (상차 끝남)
+    uint8_t rx_agv_load_arrived;      	   // 적재부 AGV 도착 (하차 준비됨)
+    uint8_t rx_agv_load_departed;          // 적재부 AGV 출발 (하차 끝남)
 
     // 5. 구동부 출력 상태 (실제 하드웨어 제어 명령 값 기록)
-    int speed_main_convey;  	       // 모터 1, 2 (메인 라인) PWM 속도 값
-    int speed_sort_convey;             // 모터 3 (분류 라인) PWM 속도 값
-    int speed_load_convey;     	       // 모터 4 (적재 라인) PWM 속도 값
-    int is_robot_work;    			   // PC7: 로봇 가동 트리거 출력 상태 (0:OFF, 1:ON)
-    int is_step_enable;				   // PB14: 스텝 모터 활성화 (Emergency 차단용)
+    uint8_t speed_main_convey;  	       // 모터 1, 2 (메인 라인) PWM 속도 값
+    uint8_t speed_sort_convey;             // 모터 3 (분류 라인) PWM 속도 값
+    uint8_t speed_load_convey;     	       // 모터 4 (적재 라인) PWM 속도 값
+    uint8_t is_robot_work;    			   // PC7: 로봇 가동 트리거 출력 상태 (0:OFF, 1:ON)
+    uint8_t is_step_enable;				   // PB14: 스텝 모터 활성화(시동) (Emergency 차단용)
 
     // 6. 리프트(스텝 모터) 물리 정보
-    int        is_lift_homed;          // 전원 투입 후 영점 완료 여부
-    int        lift_current_floor;     // 리프트 현재 층수 (1 또는 2)
-    int        target_floor;           // 이동해야 할 목표 층수
-    int        is_lift_busy;           // 리프트 이동 여부
-    int32_t    current_step_pos;       // 현재 리프트의 실제 스텝(펄스)상황
-    int32_t    target_step_pos;        // 이동해야 할 최종 목표 스텝 상황
+    uint8_t  is_lift_homed;          // 전원 투입 후 영점 완료 여부
+    uint8_t  lift_current_floor;     // 리프트 현재 층수 (1 또는 2)
+    uint8_t  target_floor;           // 이동해야 할 목표 층수
+    uint8_t  is_lift_busy;           // 리프트 이동 여부(동작, is_step_enable 과 전원과 동작 여부에서 다름)
+    int32_t  current_step_pos;       // 현재 리프트의 실제 스텝(높이)상황
+    int32_t  target_step_pos;        // 이동해야 할 최종 목표 스텝 상황
 
     // 7. 통계 및 타이머
     uint32_t   state_timer;            // 공정 내 지연 시간(Time-out)이나 대기 시간 카운트
