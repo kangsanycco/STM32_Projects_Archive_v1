@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "config.h"
+#include "system_state.h"
+#include "function.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,6 +77,8 @@ const osThreadAttr_t Task_Uart_attributes = {
   .priority = (osPriority_t) osPriorityHigh,
 };
 /* USER CODE BEGIN PV */
+
+SystemStatus_t g_sys_status; // 전역 장부 실체 선언
 
 /* USER CODE END PV */
 
@@ -132,6 +136,10 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
+    DRV_UART_Init();   // 1. 통신 시작 (DMA 수신 대기)
+    DRV_I2C_Init();    // 2. PCA9685 및 서보 모터 초기화
+    APP_FSM_Init();    // 3. 리프트 영점 복귀 및 FSM 초기화 (STATE_BOOT 실행)
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -183,6 +191,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  TASK_System_Execute();   // 1. 센서/모터/통신 갱신 (주기 제어)
+	  APP_FSM_Execute();       // 2. 로직 처리
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

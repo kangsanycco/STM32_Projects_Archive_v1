@@ -86,10 +86,10 @@ typedef enum {
 } ErrorCode_t;
 
 typedef struct {
-    CameraResult_t items[VISION_QUEUE_SIZE];
-    uint8_t head;
-    uint8_t tail;
-    uint8_t count;
+    CameraResult_t slot[VISION_QUEUE_SIZE];	// 창고 칸
+    uint8_t head;	// 맨 앞줄, 데이터를 가장 먼저 꺼내는 곳 (출구)
+    uint8_t tail;	// 맨 뒷줄, 데이터가 새로 들어와서 붙는 곳 (입구)
+    uint8_t count;	// 현재 재고량
 } VisionQueue_t;
 
 /**
@@ -106,15 +106,15 @@ typedef struct {
 
     // 2. 카메라 데이터 (Queue 관리)
     VisionQueue_t      visionQ;        // 비전 데이터를 순서대로 저장하는 FIFO 큐
-    uint8_t                is_scan_done;   // 비전 PC로부터 새로운 판독 데이터가 수신됨을 알림
+    uint8_t            is_scan_done;   // 비전 PC로부터 새로운 판독 데이터가 수신됨을 알림
 
     // 3. 물리 센서 실시간 상태 (PA/PC Input 핀 직접 매칭)
     uint8_t sensor_robot_area;             // PA10: 로봇 분류 구역 내 물체 감지 유무
     uint8_t sensor_robot_done;             // PC6: 로봇으로부터 작업 완료 신호 수신 여부
     uint8_t sensor_lift_1f;                // PA0: 리프트 1층(영점) 도달 확인 센서
     uint8_t sensor_lift_2f;                // PA1: 리프트 2층 도달 확인 센서
-    uint8_t sensor_rack_full1;             // PA4: 1층 적재함 물품 존재 여부
-    uint8_t sensor_rack_full2;             // PA5: 2층 적재함 물품 존재 여부
+    uint8_t sensor_rack_full_1f;           // PA4: 1층 적재함 물품 존재 여부
+    uint8_t sensor_rack_full_2f;           // PA5: 2층 적재함 물품 존재 여부
 
     // 4. 소프트웨어 플래그 (UART2 Rx 8바이트 패킷 데이터 기반)
     uint8_t rx_uart2_approved;       	   // 서버로부터의 가동 승인 신호 (Run/Stop)
@@ -143,7 +143,7 @@ typedef struct {
     uint32_t   totalProcessed;         // 가동 이후 총 처리된 물품 개수
 } SystemStatus_t;
 
-    extern SystemStatus_t g_sys_status;
+    extern SystemStatus_t g_sys_status;	  // main.c 에 실체 위치
 // #include 의 경우는 데이터를 참조만 하고 메모리를 공유하지 않는다 (참조 파일의 데이터를 바꿔도 원본은 바뀌지 않음)
 // extern 의 경우는 데이터의 메모리를 공유한다 (참조 파일의 데이터를 바꾸면 원본도 바뀜)
 // app_init.c 에 위치

@@ -32,23 +32,33 @@
 #define PIN_ROBOT_DONE     GPIOC, GPIO_PIN_6 // 로봇 동작 완료 (IN), UART2 PA3과 인터럽트 충돌은 없음
 
 
-// 4. 컨베이어 모터 채널 (PCA9685)
+// 4. 비전 데이터 저장용 큐 크기
+#define VISION_QUEUE_SIZE    10
+
+
+// 5. 컨베이어 모터 채널 (PCA9685)
 #define MOTOR_CH_MAIN1_CONV  0  // 메인 라인 1 컨베이어
 #define MOTOR_CH_MAIN2_CONV  1  // 메인 라인 2 컨베이어(CONV0 과 통합)
 #define MOTOR_CH_SORT_CONV   2  // 분류 파트 컨베이어
 #define MOTOR_CH_LOAD_CONV   3  // 적재 파트 컨베이어
 
 
-// 5. [ADDR] I2C 주소
+// 6. [ADDR] I2C 주소
 #define ADDR_I2C_PCA9685     (0x40 << 1)
 
 
-// 6. [HAL] 통신 핸들
+// 7. [HAL] 통신 핸들
 extern UART_HandleTypeDef huart2;	// PC 서버(OPC-UA 연동), 비전, AGV 데이터
 extern I2C_HandleTypeDef  hi2c1;	// PCA9685 드라이버
+extern TIM_HandleTypeDef  htim2;	// 리니어 스텝 모터 제어용 타이머
 #define UART_PC_SERVER    &huart2
 #define I2C_MOTOR_DRV     &hi2c1
+#define TIMER_LIFT		  &htim2
 
+// [선언 이유]
+// 1. huart2, htim2 등의 메모리는 main.c 에만 생성이 됩니다
+// 2. 하지만, 분리된 파일인 drv, bsp 등은 해당 메모리의 존재를 모르기에, extern 을 선언해줘야 합니다
+// 3. extern 은 아무 파일에서나 선언해줘도 좋지만, 가독성을 위해 config.h 에 저장을 합니다
 
 
 #endif /* COMMON_CONFIG_H_ */

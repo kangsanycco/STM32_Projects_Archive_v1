@@ -15,7 +15,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         g_sys_status.sensor_lift_1f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_1F);
 
         if (g_sys_status.sensor_lift_1f) {
-            // [추가] 하강 중 센서 감지 시 DMA 즉시 정지 (치명적 오류 방지)
+            // 하강 중 센서 감지 시 DMA 즉시 정지 (치명적 오류 방지: 리프트 1층 이동 범위 이탈)
             if (g_sys_status.liftDirection == LIFT_DIR_DOWN) {
                 HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
                 g_sys_status.is_lift_busy = 0;
@@ -36,7 +36,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         g_sys_status.sensor_lift_2f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_2F);
 
         if (g_sys_status.sensor_lift_2f) {
-            // [추가] 상승 중 오버런 센서 감지 시 DMA 즉시 정지
+            // [추가] 상승 중 2층 오버런 센서 감지 시 DMA 즉시 정지
             if (g_sys_status.liftDirection == LIFT_DIR_UP) {
                 HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
                 g_sys_status.is_lift_busy = 0;

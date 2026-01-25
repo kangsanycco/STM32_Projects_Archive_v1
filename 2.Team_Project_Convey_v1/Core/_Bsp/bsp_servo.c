@@ -23,7 +23,7 @@ static uint16_t convert_speed_to_pwm(uint8_t speed) {
  * @param ch PCA9685 채널 (0~15)
  * @param speed 속도 (0~100)
  */
-void BSP_Servo_SetSpeed(uint8_t ch, uint8_t speed) {
+void BSP_Servo_SetSpeed(uint8_t ch, uint8_t speed) {   // 어떤 채널을 움직일 지는 더 상위 계층에서 진행
     uint16_t pwm_val = convert_speed_to_pwm(speed);	   // 가독성과 여러 변수에 나눠담기 위해 convert_speed_to_pwm 변수를 곧바로 사용하지 않는다
 
     // PCA9685의 각 채널은 4개의 레지스터를 가짐 (LEDn_ON_L, ON_H, OFF_L, OFF_H)

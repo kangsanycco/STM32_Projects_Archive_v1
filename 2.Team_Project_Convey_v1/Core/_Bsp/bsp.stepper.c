@@ -119,6 +119,12 @@ void BSP_Stepper_MoveToFloor(uint8_t floor) {
 
     // DMA 시작: "계산된 step_to_move 만큼 펄스 쏴라"
     HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, &pulse_val, step_to_move);
+
+    // [함수 요약]
+    // 1. BSP_Stepper_MoveToFloor : 리프트(스텝모터)가 목표층으로 이동 할 때 켜지는 함수
+    // 2. 반환: 만약 영점이 맞지 않거나, 이미 목표층이면 그대로 반환
+    // 3. 만약 2층이 목표라면, 상태와 핀을 윗방향으로. 1층이 목표라면 아랫방향으로 정하고, 목표 층의 스텝 위치를 정한다
+    // 4. 이동량을 계산해서, DMA에 방향과 이동량을 전송한다
 }
 
 
@@ -134,6 +140,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {	// 펄스를 �
         g_sys_status.lift_current_floor = g_sys_status.target_floor;
         g_sys_status.is_lift_busy = 0;
         g_sys_status.liftDirection = LIFT_DIR_STOP;
+
+        // [함수 요약]
+        // 1. HAL_TIM_PWM_Start_DMA 에 의해 목표치만큼 펄스를 쏘면 HAL_PWM_PulseFinishedCallback 함수가 실행된다
+        // 2. 만약 해당 타이머의 주소가 TIM2 라면, 펄스 중단 신호를 보낸다. (확실하게 정리)
+        // 3. 장부를 업데이트 한다
+
     }
 }
 
@@ -145,7 +157,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {	// 펄스를 �
 // - DMA Handle: 타이머2와 연결된 DMA 채널 설정이 필요함
 // - NVIC: 타이머 전송 완료 인터럽트가 활성화되어 있어야 Callback 함수가 호출됨
 
-/* [의존성 2] 외부 안전 장치 (drv_exti.c) */
+/* [의존성 2] 오버런 방지 (drv_exti.c) */
 // - PA0(1층), PA1(2층) 센서의 인터럽트가 설정되어 있어야 함
 // - 이동 중 센서 감지 시 HAL_TIM_PWM_Stop_DMA()를 호출하여 물리적 충돌을 방지해야 함
 
