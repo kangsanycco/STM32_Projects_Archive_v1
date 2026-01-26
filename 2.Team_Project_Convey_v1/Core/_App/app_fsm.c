@@ -68,9 +68,9 @@ void APP_FSM_Execute(void) {
         g_sys_status.speed_main_convey = 0;
         g_sys_status.speed_sort_convey = 0;
         g_sys_status.speed_load_convey = 0;
-        BSP_Stepper_SetEnable(0); // 리니어 모터 힘 풀기
+        BSP_Stepper_SetEnable(0); // 리니어 모터 가동 가능
 
-        // [흐름도 3번 반영] 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
+        // 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
         if (g_sys_status.is_robot_work) {
             if (g_sys_status.sensor_robot_done) {
                 g_sys_status.is_robot_work = 0;
@@ -80,16 +80,18 @@ void APP_FSM_Execute(void) {
         return;
 
         // [함수 요약]
+        // 1. EMERGENCY 버튼을 누르면 속도를 0으로 바꾸고 리니어 모터를 가동 가능하게 한다
+        // 2. 만약 로봇이 작동하고, 로봇으로부터 작업 완료 신호를 받았다면,
+        // 로봇이 쉬고 있다는 신호와 함께 핀의 입력을 끈다
 
     }
 
     // 1. 대기 상태 (IDLE) - 가동 승인 대기
-    if (g_sys_status.mainState == STATE_IDLE) {
-        if (g_sys_status.rx_uart2_approved) {
-            g_sys_status.mainState = STATE_RUNNING;
-        }
-        return;
-    }
+    if (g_sys_status.mainState == STATE_IDLE) return;
+
+    // drv_uart.c 가 통신을 통해 데이터를 받으면 장부(g_sys_status.mainState)를 받아
+    // STATE_RUNNING으로 바꾼다
+
 
     // 2. 가동 상태 (RUNNING)
     if (g_sys_status.mainState == STATE_RUNNING) {
@@ -97,20 +99,23 @@ void APP_FSM_Execute(void) {
         // --- Step 2 & 3: 로봇 분류 및 AGV 연동 (Sort Part) ---
         switch (g_sys_status.sortState) {
             case SORT_IDLE:
-                // [정의 반영] IDLE은 정지 상태
+                // IDLE은 정지 상태
                 g_sys_status.speed_main_convey = 0;
                 g_sys_status.speed_sort_convey = 0;
 
-                // [흐름도 4번] AGV 도착 신호 수신 시 가동 시작
+                // AGV 도착 신호 수신 시 가동 시작
                 if (g_sys_status.rx_agv_sort_arrived) {
                     g_sys_status.sortState = SORT_RUNNING;
                 }
                 break;
 
+                // [함수 요약]
+                // 1. SORT_IDLE 상태에 진입하면, 메인&분류 컨베이어 속도를 0으로 고정
+
             case SORT_RUNNING:
                 // 서버에서 받은 속도로 가동 (task_system에서 반영됨)
 
-                // [흐름도 2, 3번] 가동 중 로봇 Area 센서 감지 시 정지 및 작업
+                // 가동 중 로봇 Area 센서 감지 시 정지 및 작업
                 if (g_sys_status.sensor_robot_area) {
                     CameraResult_t item = visionQ_pop();
                     if (item == ITEM_LARGE) {
@@ -118,11 +123,17 @@ void APP_FSM_Execute(void) {
                     }
                 }
 
-                // [흐름도 4번] AGV 출발 신호 수신 시 다시 IDLE(정지)로 복귀
+                //  AGV 출발 신호 수신 시 다시 IDLE(정지)로 복귀
                 if (g_sys_status.rx_agv_sort_departed) {
                     g_sys_status.sortState = SORT_IDLE;
                 }
                 break;
+
+                // [함수 요약]
+                // 1. SOTR_RUNNING, 분류 컨베이어 가동 상태라면
+                // 2. 로봇 AREA 신호가 잡히면, visionQ에서 데이터 하나를 뽑아와 저장한다
+                // 3. 저장한 데이터가 큰 상자라면, SORT_ROBOT_WORK 상태가 된다
+                // 4. 만약 분류쪽 AGV가 출발헀다면, SORT_IDLE 상태가 된다
 
             case SORT_ROBOT_WORK:
                 // 로봇 작업 중 컨베이어 정지
@@ -139,29 +150,41 @@ void APP_FSM_Execute(void) {
                     g_sys_status.sortState = SORT_RUNNING;
                 }
                 break;
+
+                // [함수 요약]
+                // 1. 센서 신호를 받아 SORT_ROBOT_WORK 상태가 되면, 메인&분류 컨베이어 속도를 0으로 바꿉니다
+                // 2. 로봇이 작동 상태라는 신호와 핀 입력을 줍니다
+                // 3. 만약 로봇의 작업이 전부 끝난다면, 로봇 작동 상태 신호와 핀 입력을 끕니다.
+                // 4. 분류 상태를 SORT_RUNNING 상태로 바꿉니다
+
         }
 
         // --- Step 5 & 6: 적재 공정 및 리니어 제어 (Load Part) ---
         switch (g_sys_status.loadState) {
             case LOAD_IDLE:
-                // [흐름도 5번] AGV 도착 시 적재 컨베이어 가동
-                if (g_sys_status.rx_agv_load_arrived) {
-                    // 서버 속도 유지 (모터4 가동)
-                }
+            	g_sys_status.speed_load_convey = 0; // 평소엔 정지
 
-                // [흐름도 6번] AGV 출발 이후 리니어 이동 및 적재 판단
+
+                // AGV가 출발하면 즉시 멈추고 다음 단계로 이동한다
                 if (g_sys_status.rx_agv_load_departed) {
                     g_sys_status.speed_load_convey = 0; // 이동 전 정지
                     uint8_t target = BSP_Sensor_GetEmptyRackFloor(); // 빈 랙 탐색
 
-                    if (target > 0) {
+                    if (target > 0) {	// 랙에 물품이 다 차지 않았다면
                         g_sys_status.target_floor = target;
                         g_sys_status.loadState = LOAD_LIFT_MOVE;
                     }
+
+                    // [함수 요약]
+                    // 1. 적재 대기 상태일 때, 기본적으로는 멈춰 있는다.
+                    // 2. (대기)AGV 위의 컨베이어가 돌아가게 되며, 기다린다
+                    // 3. AGV가 출발하면 컨베이어를 멈추고, 빈 랙을 탐색한다
+                    // 4. 만약 랙에 빈 공간이 있다면, 목표층을 정하고, 적재파트 상태를 LOAD_LIFT_MOVE(리프트가 움직이는) 것으로 바꾼다
+
                 }
                 break;
 
-            case LOAD_LIFT_MOVE:
+            case LOAD_LIFT_MOVE:	// 리프트 작동 중
                 // 스텝 모터를 이용해 목표 층으로 이동
                 if (!g_sys_status.is_lift_busy) {
                     BSP_Stepper_MoveToFloor(g_sys_status.target_floor);
@@ -169,6 +192,13 @@ void APP_FSM_Execute(void) {
                         g_sys_status.loadState = LOAD_RACK_INSERT;
                         g_sys_status.state_timer = HAL_GetTick(); // 투입 시간 측정 시작
                     }
+
+                    // [함수 요약]
+                    // 1. 리프트가 작동 중일 때
+                    // 2. 리프트가 정지 상태라면, 목표층으로 리니어 이동
+                    // 3. 현재 리니어 위치(높이) 와 목표 층의 위치(높이)가 같다면
+                    // 4. 상태는 LOAD_RACK_INSERT(랙에 물품을 집어넣는다)가 되며, 투입 시간을 측정한다
+
                 }
                 break;
 
@@ -183,6 +213,12 @@ void APP_FSM_Execute(void) {
                     g_sys_status.loadState = LOAD_IDLE;
                 }
                 break;
+
+                // [함수 요약]
+                // 1. 현재 상태가 LOAD_RACK_INSERT(투입 중)이라면, 컨베이어의 속도를 50으로 바꾼다
+                // 2. 투입 시작으로 부터 2000ms 가 지나면, 컨베이어 속도는 0으로 변경된다
+                // 3. 리프트는 1층으로 이동하며, 도착 시 LOAD_IDLE(대기 중) 상태로 변경된다
+
         }
     }
 }

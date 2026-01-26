@@ -27,7 +27,7 @@ typedef enum {
  * [그룹 B] 분류 공정 상세 상태 (모터 1, 2, 3 및 로봇 제어)
  */
 typedef enum {
-    SORT_IDLE = 0,       // 분류 컨베이어 멈춤 (AGV가 없거나, 로봇 작업이 없거나, 정지 명령 시)
+    SORT_IDLE = 0,       // 메인&분류 컨베이어 멈춤 (AGV가 없거나, 로봇 작업이 없거나, 정지 명령 시)
     SORT_ROBOT_WORK = 1, // 로봇 작업 중 (컨베이어 일시 정지)
     SORT_RUNNING = 2     // AGV 도착 확인됨, 모든 컨베이어 가동 (상차 중)
 } SortState_t;
@@ -37,7 +37,7 @@ typedef enum {
  */
 typedef enum {
     LOAD_IDLE = 0,          // 1층 대기 (AGV 수령 중 포함)
-    LOAD_LIFT_MOVE = 1,     // 목표 층(1층, 2층)으로 상승 또는 복귀 이동
+    LOAD_LIFT_MOVE = 1,     // 리프트 작동 중, 목표 층(1층, 2층)으로 상승 또는 복귀 이동
     LOAD_RACK_INSERT = 2    // 해당 층 도착 후 랙에 물건 밀어넣기
 } LoadState_t;
 

@@ -28,7 +28,7 @@ void DRV_UART_RxUpdate(uint8_t* p) {
     if (p[0] != 0xFE || p[7] != 0xFF) return;
 
     // 2. 시스템 상태 수신 (Byte 1)
-    g_sys_status.mainState = (MainControlState_t)p[1];
+    g_sys_status.mainState = (MainControlState_t)p[1];	// 0, 1, 2
 
     // 3. 3종 컨베이어 속도 수신 (Byte 2, 3, 4)
     g_sys_status.speed_main_convey = p[2];
@@ -60,8 +60,8 @@ void DRV_UART_TxReport(void) {
 
     // 장치 상태 통합 비트 매핑 (Byte 5)
     uint8_t s = 0;
-    s |= (g_sys_status.liftDirection & 0x03);    // Bit 0-1: 리니어 방향 (0,1,2)
-    if (g_sys_status.is_lift_busy)   s |= (1 << 2); // Bit 2: 리니어 이동중
+    s |= (g_sys_status.liftDirection & 0x03);    // Bit 0-1: 리니어 방향 (0: 정지, 1: 상승, 2:하강)
+    if (g_sys_status.is_lift_busy)   s |= (1 << 2); // Bit 2: 리니어 이동중 (0: 도착, 1: 이동중)
     if (g_sys_status.is_robot_work)  s |= (1 << 3); // Bit 3: 로봇 작동중
     if (g_sys_status.sensor_lift_1f) s |= (1 << 4); // Bit 4: 1층 도착
     if (g_sys_status.sensor_lift_2f) s |= (1 << 5); // Bit 5: 2층 도착
