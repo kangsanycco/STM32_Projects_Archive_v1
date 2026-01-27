@@ -138,7 +138,6 @@ int main(void)
 
     DRV_UART_Init();   // 1. 통신 시작 (DMA 수신 대기)
     DRV_I2C_Init();    // 2. PCA9685 및 서보 모터 초기화
-    APP_FSM_Init();    // 3. 리프트 영점 복귀 및 FSM 초기화 (STATE_BOOT 실행)
 
   /* USER CODE END 2 */
 

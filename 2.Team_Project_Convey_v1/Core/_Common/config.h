@@ -28,8 +28,8 @@
 
 
 // 3. [PIN] 로봇 인터페이스 (물리 신호 필요 시) - (임시: 서버로 받을지, 핀으로 받을지 고려)
-#define PIN_ROBOT_WORK     GPIOC, GPIO_PIN_7 // 로봇 동작 시작 (OUT), UART2 PA2와 인터럽트 충돌은 없음
-#define PIN_ROBOT_DONE     GPIOC, GPIO_PIN_6 // 로봇 동작 완료 (IN), UART2 PA3과 인터럽트 충돌은 없음
+#define PIN_ROBOT_WORK     GPIOA, GPIO_PIN_7 // 로봇 동작 시작 (OUT), UART2 PA2와 인터럽트 충돌은 없음
+#define PIN_ROBOT_DONE     GPIOA, GPIO_PIN_6 // 로봇 동작 완료 (IN), UART2 PA3과 인터럽트 충돌은 없음
 
 
 // 4. 비전 데이터 저장용 큐 크기

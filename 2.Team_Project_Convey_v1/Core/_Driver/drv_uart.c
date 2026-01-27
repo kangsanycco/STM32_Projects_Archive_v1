@@ -22,13 +22,32 @@ void DRV_UART_Init(void) {
     HAL_UART_Receive_DMA(UART_PC_SERVER, rx_uart2_data, 8);
 }
 
+// 1. 신호 번역용 매핑 테이블 (파일 상단 static 선언)
+// 서버의 mainSignal(0, 1, 2)을 내부 MainControlState_t(0, 3, 5)로 매칭
+static const MainControlState_t signal_to_state[] = {	// 반드시 static 사용
+    STATE_BOOT,      // 0번 신호: 시작 명령
+    STATE_STOP,      // 1번 신호: 정지 명령
+    STATE_EMERGENCY  // 2번 신호: 비상 명령
+};
+
+
 // 패킷 해석: 수신 (PC -> MCU)
 void DRV_UART_RxUpdate(uint8_t* p) {
-    // 1. STX/ETX 검증 (데이터 밀림 방지)
-    if (p[0] != 0xFE || p[7] != 0xFF) return;
 
-    // 2. 시스템 상태 수신 (Byte 1)
-    g_sys_status.mainState = (MainControlState_t)p[1];	// 0, 1, 2
+	// 1. STX/ETX 검증 (데이터 밀림 방지)
+	if (p[0] != 0xFE || p[7] != 0xFF) return;
+
+	// 2. 서버 신호 처리 (배열 매핑 방식)
+	uint8_t mainSignal = p[1]; // 서버에서 온 신호 (0, 1, 2)
+
+	if (mainSignal <= 2) { // 약속된 0, 1, 2 범위 내 신호일 때만 처리
+	    MainControlState_t nextState = signal_to_state[mainSignal];
+
+	    // [방어 로직] 이미 가동 중(RUNNING)인데 다시 시작(0) 신호가 온 경우는 무시
+	    if (!(mainSignal == 0 && g_sys_status.mainState == STATE_RUNNING)) {
+	        g_sys_status.mainState = nextState;
+	    }
+	}
 
     // 3. 3종 컨베이어 속도 수신 (Byte 2, 3, 4)
     g_sys_status.speed_main_convey = p[2];
@@ -62,9 +81,9 @@ void DRV_UART_TxReport(void) {
     uint8_t s = 0;
     s |= (g_sys_status.liftDirection & 0x03);    // Bit 0-1: 리니어 방향 (0: 정지, 1: 상승, 2:하강)
     if (g_sys_status.is_lift_busy)   s |= (1 << 2); // Bit 2: 리니어 이동중 (0: 도착, 1: 이동중)
-    if (g_sys_status.is_robot_work)  s |= (1 << 3); // Bit 3: 로봇 작동중
-    if (g_sys_status.sensor_lift_1f) s |= (1 << 4); // Bit 4: 1층 도착
-    if (g_sys_status.sensor_lift_2f) s |= (1 << 5); // Bit 5: 2층 도착
+    if (g_sys_status.sensor_lift_1f) s |= (1 << 3); // Bit 3: 1층 도착
+    if (g_sys_status.sensor_lift_2f) s |= (1 << 4); // Bit 4: 2층 도착
+    if (g_sys_status.is_robot_work)  s |= (1 << 5); // Bit 5: 로봇 작동중
     if (g_sys_status.sensor_robot_done) s |= (1 << 6); // Bit 6: PC6 로봇완료신호
     tx_uart2_data[5] = s;
 

@@ -118,7 +118,7 @@ void BSP_Stepper_MoveToFloor(uint8_t floor) {
 
 
     // DMA 시작: "계산된 step_to_move 만큼 펄스 쏴라"
-    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, &pulse_val, step_to_move);
+    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, &pulse_val, step_to_move);
 
     // [함수 요약]
     // 1. BSP_Stepper_MoveToFloor : 리프트(스텝모터)가 목표층으로 이동 할 때 켜지는 함수
@@ -132,8 +132,8 @@ void BSP_Stepper_MoveToFloor(uint8_t floor) {
  * @brief DMA 완료 콜백 (목적지 도착 시점)
  */
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {	// 펄스를 목표치만큼 쏘고 전부 완수했다는 신호 알림
-    if (htim->Instance == TIM2) {
-        HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);	// 동작 중인 펄스 중단 신호 보내기
+    if (htim->Instance == TIM1) {
+        HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);	// 동작 중인 펄스 중단 신호 보내기
 
         // 장부 업데이트 (목표치 도달 확정)
         g_sys_status.current_step_pos = g_sys_status.target_step_pos;

@@ -45,6 +45,7 @@ CameraResult_t visionQ_pop(void) {	 // 값 빼기, visionQ_pop 함수가 끝나�
 void APP_FSM_Init(void) {
 
     g_sys_status.mainState = STATE_BOOT;
+    g_sys_status.is_lift_homed = 0; // 영점을 잡기 시작 전에 초기화
 
     // 카메라 비전 큐 초기화
     g_sys_status.visionQ.count = 0;
@@ -63,7 +64,16 @@ void APP_FSM_Init(void) {
  * @brief 전체 공정 시나리오 실행 (FSM)
  */
 void APP_FSM_Execute(void) {
-    // 0. 긴급 정지 체크 (최우선순위, 모든 장비 즉시 정지)
+	// 0. 서버 신호(mainState)가 STATE_BOOT인지 확인
+	if (g_sys_status.mainState == STATE_BOOT) {
+
+	    // 아직 영점을 안 잡은 상태라면 (최초 1회 혹은 재부팅 신호 시)
+	    APP_FSM_Init(); // 여기서 비로소 리프트 영점을 잡고 IDLE로 바꿉니다.
+	    return;
+
+	}
+
+    // 1. 긴급 정지 체크 (최우선순위, 모든 장비 즉시 정지)
     if (g_sys_status.mainState == STATE_EMERGENCY) {
         g_sys_status.speed_main_convey = 0;
         g_sys_status.speed_sort_convey = 0;
@@ -72,7 +82,7 @@ void APP_FSM_Execute(void) {
 
         // 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
         if (g_sys_status.is_robot_work) {
-            if (g_sys_status.sensor_robot_done) {
+            if (!g_sys_status.sensor_robot_done) {
                 g_sys_status.is_robot_work = 0;
                 HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
             }
@@ -86,14 +96,14 @@ void APP_FSM_Execute(void) {
 
     }
 
-    // 1. 대기 상태 (IDLE) - 가동 승인 대기
+    // 2. 대기 상태 (IDLE) - 가동 승인 대기
     if (g_sys_status.mainState == STATE_IDLE) return;
 
     // drv_uart.c 가 통신을 통해 데이터를 받으면 장부(g_sys_status.mainState)를 받아
     // STATE_RUNNING으로 바꾼다
 
 
-    // 2. 가동 상태 (RUNNING)
+    // 3. 가동 상태 (RUNNING)
     if (g_sys_status.mainState == STATE_RUNNING) {
 
         // --- Step 2 & 3: 로봇 분류 및 AGV 연동 (Sort Part) ---
@@ -116,7 +126,7 @@ void APP_FSM_Execute(void) {
                 // 서버에서 받은 속도로 가동 (task_system에서 반영됨)
 
                 // 가동 중 로봇 Area 센서 감지 시 정지 및 작업
-                if (g_sys_status.sensor_robot_area) {
+                if (!g_sys_status.sensor_robot_area) {
                     CameraResult_t item = visionQ_pop();
                     if (item == ITEM_LARGE) {
                         g_sys_status.sortState = SORT_ROBOT_WORK;
@@ -144,7 +154,7 @@ void APP_FSM_Execute(void) {
                 HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_SET);
 
                 // 로봇 작업 완료 신호 시 다시 가동(RUNNING)
-                if (g_sys_status.sensor_robot_done) {
+                if (!g_sys_status.sensor_robot_done) {
                     g_sys_status.is_robot_work = 0;
                     HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
                     g_sys_status.sortState = SORT_RUNNING;
