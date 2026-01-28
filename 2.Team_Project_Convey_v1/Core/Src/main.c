@@ -190,8 +190,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  TASK_System_Execute();   // 1. 센서/모터/통신 갱신 (주기 제어)
-	  APP_FSM_Execute();       // 2. 로직 처리
+
 
     /* USER CODE END WHILE */
 
@@ -386,6 +385,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	TASK_System_Execute();   // 1. 센서/모터/통신 갱신 (주기 제어)
+	APP_FSM_Execute();       // 2. 로직 처리
     osDelay(1);
   }
   /* USER CODE END 5 */

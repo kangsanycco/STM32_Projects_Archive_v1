@@ -19,7 +19,7 @@ typedef enum {
     STATE_IDLE = 1,             			// 전원 ON 후 UART 가동 승인 대기 (전체 컨베이어 OFF)
     STATE_RUNNING = 2,       	    		// 가동 승인 후 메인/분류 컨베이어 구동 중,
 	STATE_STOP = 3,							// 일반 정지
-	STATE_EMERGENCY_ROBOT = 4,				// 비상 정지 중 로봇 잔여 작업
+	STATE_EMERGENCY_ROBOT = 4,				// 정지 중 로봇 잔여 작업
     STATE_EMERGENCY = 5,        		  	// 비상 정지
 } MainControlState_t;
 

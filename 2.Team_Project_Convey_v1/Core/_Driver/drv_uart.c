@@ -40,12 +40,16 @@ void DRV_UART_RxUpdate(uint8_t* p) {
 	// 2. 서버 신호 처리 (배열 매핑 방식)
 	uint8_t mainSignal = p[1]; // 서버에서 온 신호 (0, 1, 2)
 
-	if (mainSignal <= 2) { // 약속된 0, 1, 2 범위 내 신호일 때만 처리
+	if (mainSignal <= 2) {
 	    MainControlState_t nextState = signal_to_state[mainSignal];
 
-	    // [방어 로직] 이미 가동 중(RUNNING)인데 다시 시작(0) 신호가 온 경우는 무시
 	    if (!(mainSignal == 0 && g_sys_status.mainState == STATE_RUNNING)) {
-	        g_sys_status.mainState = nextState;
+	        // 정지나 비상 상황에서 START(0)를 누르면 IDLE로 목적지 변경
+	        if (mainSignal == 0 && (g_sys_status.mainState == STATE_STOP || g_sys_status.mainState == STATE_EMERGENCY)) {
+	            g_sys_status.mainState = STATE_IDLE;
+	        } else {
+	            g_sys_status.mainState = nextState;
+	        }
 	    }
 	}
 

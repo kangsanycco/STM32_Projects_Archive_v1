@@ -56,7 +56,7 @@ void APP_FSM_Init(void) {
     BSP_Stepper_Home();
 
     if (g_sys_status.is_lift_homed) {
-        g_sys_status.mainState = STATE_IDLE;
+        g_sys_status.mainState = STATE_RUNNING;
     }
 }
 
@@ -78,16 +78,25 @@ void APP_FSM_Execute(void) {
         g_sys_status.speed_main_convey = 0;
         g_sys_status.speed_sort_convey = 0;
         g_sys_status.speed_load_convey = 0;
-        BSP_Stepper_SetEnable(0); // 리니어 모터 가동 가능
+        BSP_Stepper_SetEnable(0); // 스텝 모터 비활성화
+
+        // 로봇 잔여 작업 체크
+        if (g_sys_status.is_robot_work == 1) {
+                g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+            } else if (!g_sys_status.is_lift_busy) { // 로봇 안하면 리프트 확인 후 IDLE
+                    g_sys_status.mainState = STATE_IDLE;
+            }
+            return;
+        }
 
         // 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
-        if (g_sys_status.is_robot_work) {
-            if (!g_sys_status.sensor_robot_done) {
-                g_sys_status.is_robot_work = 0;
-                HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
-            }
-        }
-        return;
+    	if (g_sys_status.mainState == STATE_EMERGENCY_ROBOT) {
+    		if (!g_sys_status.sensor_robot_done) { // 로봇이 완료 신호를 주면
+    		    HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
+    		    g_sys_status.is_robot_work = 0;
+    		    g_sys_status.mainState = STATE_IDLE; // 다시 완전 비상태로 복귀
+    		}
+    		return;
 
         // [함수 요약]
         // 1. EMERGENCY 버튼을 누르면 속도를 0으로 바꾸고 리니어 모터를 가동 가능하게 한다
@@ -95,15 +104,33 @@ void APP_FSM_Execute(void) {
         // 로봇이 쉬고 있다는 신호와 함께 핀의 입력을 끈다
 
     }
+    // 2. 정지 상태 (STATE_STOP) 처리: 하던 작업 마무리 후 IDLE로 가기
+    if (g_sys_status.mainState == STATE_STOP) {
+    	// 유입을 막기 위해 컨베이어는 정지
+    	g_sys_status.speed_main_convey = 0;
+        g_sys_status.speed_sort_convey = 0;
+    	g_sys_status.speed_load_convey = 0;
 
-    // 2. 대기 상태 (IDLE) - 가동 승인 대기
+    	// STOP 시에도 로봇이 작업 중이면 마무리 단계로 보냄
+    	if (g_sys_status.is_robot_work == 1) {
+    	    g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+    	}
+    	else if (!g_sys_status.is_lift_busy) {
+    	    g_sys_status.mainState = STATE_IDLE;
+    	}
+        return;
+    }
+
+
+
+    // 3. 대기 상태 (IDLE) - 가동 승인 대기
     if (g_sys_status.mainState == STATE_IDLE) return;
 
     // drv_uart.c 가 통신을 통해 데이터를 받으면 장부(g_sys_status.mainState)를 받아
     // STATE_RUNNING으로 바꾼다
 
 
-    // 3. 가동 상태 (RUNNING)
+    // 4. 가동 상태 (RUNNING)
     if (g_sys_status.mainState == STATE_RUNNING) {
 
         // --- Step 2 & 3: 로봇 분류 및 AGV 연동 (Sort Part) ---
