@@ -80,11 +80,11 @@ void DRV_UART_TxReport(void) {
     // 장치 상태 통합 비트 매핑 (Byte 5)
     uint8_t s = 0;
     s |= (g_sys_status.liftDirection & 0x03);    // Bit 0-1: 리니어 방향 (0: 정지, 1: 상승, 2:하강)
-    if (g_sys_status.is_lift_busy)   s |= (1 << 2); // Bit 2: 리니어 이동중 (0: 도착, 1: 이동중)
-    if (g_sys_status.sensor_lift_1f) s |= (1 << 3); // Bit 3: 1층 도착
-    if (g_sys_status.sensor_lift_2f) s |= (1 << 4); // Bit 4: 2층 도착
-    if (g_sys_status.is_robot_work)  s |= (1 << 5); // Bit 5: 로봇 작동중
-    if (g_sys_status.sensor_robot_done) s |= (1 << 6); // Bit 6: PC6 로봇완료신호
+    if (g_sys_status.is_lift_busy)   	  s |= (1 << 2); // Bit 2: 리프트 이동중 (0: 도착, 1: 이동중)
+    if (g_sys_status.sensor_lift_1f == 0) s |= (1 << 3); // Bit 3: 리프트 1층 도착 (0: 도착, 1: 미도착)
+    if (g_sys_status.signal_lift_2f) 	  s |= (1 << 4); // Bit 4: 리프트 2층 도착 (0: 미도착, 1: 도착)
+    if (g_sys_status.is_robot_work)  	  s |= (1 << 5); // Bit 5: 로봇 작동중 (0: OFF, 1: ON)
+    if (g_sys_status.sensor_robot_done == 0) s |= (1 << 6); // Bit 6: PC6 로봇완료신호
     tx_uart2_data[5] = s;
 
     // 리프트 위치 정보 (Byte 6)

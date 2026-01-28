@@ -33,10 +33,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
     // 2. 리니어 2층 (PA1) - 오버런 감지 및 급제동
     else if (GPIO_Pin == GPIO_PIN_1) {
-        g_sys_status.sensor_lift_2f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_2F);
+    	// 오버런 감지
+        g_sys_status.sensor_lift_overrun_2f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_2F);
 
-        if (!g_sys_status.sensor_lift_2f) {
-            // [추가] 상승 중 2층 오버런 센서 감지 시 DMA 즉시 정지
+        if (!g_sys_status.sensor_lift_overrun_2f) {
+            // 상승 중 2층 오버런 센서 감지 시 DMA 즉시 정지
             if (g_sys_status.liftDirection == LIFT_DIR_UP) {
                 HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
                 g_sys_status.is_lift_busy = 0;

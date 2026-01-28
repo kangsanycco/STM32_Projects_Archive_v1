@@ -36,8 +36,12 @@ void BSP_Sensor_UpdateAll(void) {
     g_sys_status.sensor_rack_full_2f = HAL_GPIO_ReadPin(PIN_SENSOR_RACK_2F);
     g_sys_status.sensor_robot_area = HAL_GPIO_ReadPin(PIN_SENSOR_ROBOT_AREA);
     g_sys_status.sensor_lift_1f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_1F);
-    g_sys_status.sensor_lift_2f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_2F);
-
+    g_sys_status.sensor_lift_overrun_2f = HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_2F);
+    if (!g_sys_status.is_lift_busy && g_sys_status.lift_current_floor == 2) {
+            g_sys_status.signal_lift_2f = 1;
+        } else {
+            g_sys_status.signal_lift_2f = 0;
+        }
     // [EXTI의 정보가 묻히는 거 아닌가에 대한 답변]
     // 1. 핀의 물리적 상태가 EXTI의 물리적 상태를 묻으려면 서로 데이터가 달라야 한다
     // 2. 하지만 해당 UpdateAll 함수는 주기적으로 상태를 체크하는 것이므로, 다루는 핀의 데이터가 다를 수가 없다

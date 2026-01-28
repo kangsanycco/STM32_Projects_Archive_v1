@@ -65,7 +65,7 @@ void BSP_Stepper_Home(void) {
     BSP_Stepper_SetEnable(1);
 
     // 1층 센서(PA0)가 인식될 때까지 무한 반복 (안전을 위해 최대 스텝 제한 권장)
-    while (HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_1F) == GPIO_PIN_RESET) {
+    while (HAL_GPIO_ReadPin(PIN_SENSOR_LIFT_1F) == GPIO_PIN_SET) {
         BSP_Stepper_SingleStep();
         HAL_Delay(1); // 홈 복귀는 안전하게 천천히
         // 리프트를 제외하고 다른 공정은 시작되기 전이므로, CPU에 집중을 하여도 된다

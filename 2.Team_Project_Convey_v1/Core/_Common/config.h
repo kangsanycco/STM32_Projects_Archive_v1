@@ -16,9 +16,9 @@
 // 1속성: PIN_Sensor / 2속성: 주체 / 3속성: 대상
 #define PIN_SENSOR_ROBOT_AREA   GPIOA, GPIO_PIN_10  // 로봇 작업 영역 (적외선)
 #define PIN_SENSOR_LIFT_1F  	GPIOA, GPIO_PIN_0   // 리니어 1층 도착 및 원점 (근접)
-#define PIN_SENSOR_LIFT_2F  	GPIOA, GPIO_PIN_1   // 리니어 2층 범위 이탈 감지 (근접)
-#define PIN_SENSOR_RACK_1F	 	GPIOA, GPIO_PIN_4   // 1층 랙 물품 유무 (적외선)
-#define PIN_SENSOR_RACK_2F	 	GPIOA, GPIO_PIN_5   // 2층 랙 물품 유무 (적외선)
+#define PIN_SENSOR_LIFT_2F  	GPIOA, GPIO_PIN_1   // 리니어 2층 범위 이탈 감지 (근접), 2층 도착 감지 센서 아님
+#define PIN_SENSOR_RACK_1F	 	GPIOA, GPIO_PIN_4   // 1층 랙 물품 유무 (적외선) (0: 물품 있음/감지, 1: 물품 없음)
+#define PIN_SENSOR_RACK_2F	 	GPIOA, GPIO_PIN_5   // 2층 랙 물품 유무 (적외선) (0: 물품 있음/감지, 1: 물품 없음)
 
 
 // 2. [PIN] 리니어 스텝 모터 (42H48H1704A2)
@@ -50,10 +50,10 @@
 // 7. [HAL] 통신 핸들
 extern UART_HandleTypeDef huart2;	// PC 서버(OPC-UA 연동), 비전, AGV 데이터
 extern I2C_HandleTypeDef  hi2c1;	// PCA9685 드라이버
-extern TIM_HandleTypeDef  htim2;	// 리니어 스텝 모터 제어용 타이머
+extern TIM_HandleTypeDef  htim1;	// 리니어 스텝 모터 제어용 타이머
 #define UART_PC_SERVER    &huart2
 #define I2C_MOTOR_DRV     &hi2c1
-#define TIMER_LIFT		  &htim2
+#define TIMER_LIFT		  &htim1
 
 // [선언 이유]
 // 1. huart2, htim2 등의 메모리는 main.c 에만 생성이 됩니다

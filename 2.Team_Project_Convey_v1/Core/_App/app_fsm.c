@@ -194,14 +194,16 @@ void APP_FSM_Execute(void) {
                 }
                 break;
 
-            case LOAD_LIFT_MOVE:	// 리프트 작동 중
-                // 스텝 모터를 이용해 목표 층으로 이동
-                if (!g_sys_status.is_lift_busy) {
+            case LOAD_LIFT_MOVE:
+                // 아직 이동 시작 전이라면 (busy가 0일 때 시작)
+                if (!g_sys_status.is_lift_busy && (g_sys_status.lift_current_floor != g_sys_status.target_floor)) {
                     BSP_Stepper_MoveToFloor(g_sys_status.target_floor);
-                    if (g_sys_status.current_step_pos == g_sys_status.target_step_pos) {
-                        g_sys_status.loadState = LOAD_RACK_INSERT;
-                        g_sys_status.state_timer = HAL_GetTick(); // 투입 시간 측정 시작
-                    }
+                }
+
+                // 이동이 끝났다면 (DMA 콜백에 의해 busy가 0이 되고 층이 업데이트됨)
+                if (!g_sys_status.is_lift_busy && (g_sys_status.lift_current_floor == g_sys_status.target_floor)) {
+                    g_sys_status.loadState = LOAD_RACK_INSERT;
+                    g_sys_status.state_timer = HAL_GetTick();
 
                     // [함수 요약]
                     // 1. 리프트가 작동 중일 때
@@ -211,6 +213,8 @@ void APP_FSM_Execute(void) {
 
                 }
                 break;
+
+
 
             case LOAD_RACK_INSERT:
                 // [흐름도 6번] 해당 층에서 컨베이어 재가동하여 랙에 투입
