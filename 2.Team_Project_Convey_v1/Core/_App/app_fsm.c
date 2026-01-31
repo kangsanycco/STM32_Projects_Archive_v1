@@ -198,9 +198,20 @@ void APP_FSM_Execute(void) {
 
         // --- Step 5 & 6: 적재 공정 및 리니어 제어 (Load Part) ---
         switch (g_sys_status.loadState) {
-            case LOAD_IDLE:
-            	g_sys_status.speed_load_convey = 0; // 평소엔 정지
-
+        	case LOAD_IDLE:
+                // 1. 초기화: AGV가 없을 때는 컨베이어 정지 및 타이머 대기
+                if (!g_sys_status.rx_agv_load_arrived) {
+                    g_sys_status.speed_load_convey = 0;
+                    g_sys_status.state_timer = HAL_GetTick(); // 도착 전까지 계속 갱신 (도착 시점 잡기 위함)
+                }
+                // 2. AGV 도착 시: 고정된 state_timer 기준으로 2초간 가동
+                else {
+                    if (HAL_GetTick() - g_sys_status.state_timer < 2000) {
+                        g_sys_status.speed_load_convey = 50;
+                    } else {
+                        g_sys_status.speed_load_convey = 0;
+                    }
+                }
 
                 // AGV가 출발하면 즉시 멈추고 다음 단계로 이동한다
                 if (g_sys_status.rx_agv_load_departed) {
@@ -213,8 +224,8 @@ void APP_FSM_Execute(void) {
                     }
 
                     // [함수 요약]
-                    // 1. 적재 대기 상태일 때, 기본적으로는 멈춰 있는다.
-                    // 2. (대기)AGV 위의 컨베이어가 돌아가게 되며, 기다린다
+                    // 1. 적재 대기 상태일 때, AGV가 도착하지 않았다면, 컨베이어 속도는 0이 되고, 타이머를 센다
+                    // 2. 만약, AGV가 도착 상태라면, 2000ms 동안 50%의 컨베이어를 가동한다, 끝나면 0이 된다
                     // 3. AGV가 출발하면 컨베이어를 멈추고, 빈 랙을 탐색한다
                     // 4. 만약 랙에 빈 공간이 있다면, 목표층을 정하고, 적재파트 상태를 LOAD_LIFT_MOVE(리프트가 움직이는) 것으로 바꾼다
 

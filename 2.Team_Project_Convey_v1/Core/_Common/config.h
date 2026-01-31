@@ -22,7 +22,7 @@
 
 
 // 2. [PIN] 리니어 스텝 모터 (42H48H1704A2)
-#define PIN_STEP_LIFT_PULSE			GPIOB, GPIO_PIN_12  // 펄스(속도)
+#define PIN_STEP_LIFT_PULSE			GPIOA, GPIO_PIN_8  // 펄스(속도)
 #define PIN_STEP_LIFT_DIRECTION		GPIOB, GPIO_PIN_13	// 방향
 #define PIN_STEP_LIFT_ENABLE		GPIOB, GPIO_PIN_14	// 활성화
 
@@ -50,10 +50,10 @@
 // 7. [HAL] 통신 핸들
 extern UART_HandleTypeDef huart2;	// PC 서버(OPC-UA 연동), 비전, AGV 데이터
 extern I2C_HandleTypeDef  hi2c1;	// PCA9685 드라이버
-extern TIM_HandleTypeDef  htim1;	// 리니어 스텝 모터 제어용 타이머
+extern TIM_HandleTypeDef  htim2;	// 리니어 스텝 모터 제어용 타이머
 #define UART_PC_SERVER    &huart2
 #define I2C_MOTOR_DRV     &hi2c1
-#define TIMER_LIFT		  &htim1
+#define TIMER_LIFT		  &htim2
 
 // [선언 이유]
 // 1. huart2, htim2 등의 메모리는 main.c 에만 생성이 됩니다

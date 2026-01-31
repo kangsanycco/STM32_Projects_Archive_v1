@@ -44,9 +44,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
-DMA_HandleTypeDef hdma_i2c1_tx;
+
+TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -55,25 +58,18 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for Task_Sensor */
-osThreadId_t Task_SensorHandle;
-const osThreadAttr_t Task_Sensor_attributes = {
-  .name = "Task_Sensor",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for Task_Motor */
-osThreadId_t Task_MotorHandle;
-const osThreadAttr_t Task_Motor_attributes = {
-  .name = "Task_Motor",
-  .stack_size = 128 * 4,
+/* Definitions for Task_System */
+osThreadId_t Task_SystemHandle;
+const osThreadAttr_t Task_System_attributes = {
+  .name = "Task_System",
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for Task_Uart */
-osThreadId_t Task_UartHandle;
-const osThreadAttr_t Task_Uart_attributes = {
-  .name = "Task_Uart",
-  .stack_size = 128 * 4,
+/* Definitions for Task_FSM */
+osThreadId_t Task_FSMHandle;
+const osThreadAttr_t Task_FSM_attributes = {
+  .name = "Task_FSM",
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
 /* USER CODE BEGIN PV */
@@ -88,10 +84,10 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_TIM2_Init(void);
 void StartDefaultTask(void *argument);
 void StartTask02(void *argument);
 void StartTask03(void *argument);
-void StartTask04(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -134,6 +130,7 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
     DRV_UART_Init();   // 1. 통신 시작 (DMA 수신 대기)
@@ -164,14 +161,11 @@ int main(void)
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of Task_Sensor */
-  Task_SensorHandle = osThreadNew(StartTask02, NULL, &Task_Sensor_attributes);
+  /* creation of Task_System */
+  Task_SystemHandle = osThreadNew(StartTask02, NULL, &Task_System_attributes);
 
-  /* creation of Task_Motor */
-  Task_MotorHandle = osThreadNew(StartTask03, NULL, &Task_Motor_attributes);
-
-  /* creation of Task_Uart */
-  Task_UartHandle = osThreadNew(StartTask04, NULL, &Task_Uart_attributes);
+  /* creation of Task_FSM */
+  Task_FSMHandle = osThreadNew(StartTask03, NULL, &Task_FSM_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -280,6 +274,51 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 83;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 999;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -322,6 +361,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
@@ -345,19 +387,52 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pins : PA8 PA9 PA10 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7|GPIO_PIN_8, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+
+  /*Configure GPIO pins : PA0 PA1 PA6 PA10 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_6|GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  /*Configure GPIO pins : PA4 PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB13 PB14 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
@@ -385,16 +460,14 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	TASK_System_Execute();   // 1. 센서/모터/통신 갱신 (주기 제어)
-	APP_FSM_Execute();       // 2. 로직 처리
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_StartTask02 */
 /**
-* @brief Function implementing the Task_Sensor thread.
+* @brief Function implementing the Task_System thread.
 * @param argument: Not used
 * @retval None
 */
@@ -405,6 +478,7 @@ void StartTask02(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	TASK_System_Execute();
     osDelay(1);
   }
   /* USER CODE END StartTask02 */
@@ -412,7 +486,7 @@ void StartTask02(void *argument)
 
 /* USER CODE BEGIN Header_StartTask03 */
 /**
-* @brief Function implementing the Task_Motor thread.
+* @brief Function implementing the Task_FSM thread.
 * @param argument: Not used
 * @retval None
 */
@@ -423,27 +497,10 @@ void StartTask03(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	APP_FSM_Execute();
+    osDelay(10);
   }
   /* USER CODE END StartTask03 */
-}
-
-/* USER CODE BEGIN Header_StartTask04 */
-/**
-* @brief Function implementing the Task_Uart thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartTask04 */
-void StartTask04(void *argument)
-{
-  /* USER CODE BEGIN StartTask04 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartTask04 */
 }
 
 /**

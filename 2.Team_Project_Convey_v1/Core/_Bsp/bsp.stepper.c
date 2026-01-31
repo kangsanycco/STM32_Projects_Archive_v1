@@ -11,7 +11,7 @@
 
 // [설정] 1층에서 2층까지 이동하는 데 필요한 총 걸음 수 (데모용 임시값)
 #define STEPS_PER_FLOOR    5000  // 1층에서 2층까지 필요한 스텝 수
-#define HOMING_TIMEOUT	   7000  // 홈 복귀 시 최대 허용 스텝 (넘길 시 에러)
+#define HOMING_TIMEOUT	   12000  // 홈 복귀 시 최대 허용 스텝 (넘길 시 에러)
 
 // DMA용 펄스 데이터 (50% Duty: 타이머 ARR 설정값의 50%)
 static uint32_t pulse_val = 50;
@@ -34,17 +34,16 @@ void BSP_Stepper_SetEnable(uint8_t enable) {
  * @brief 펄스 1개 생성 (한 칸 이동)
  */
 static void BSP_Stepper_SingleStep(void) {
-    HAL_GPIO_WritePin(PIN_STEP_LIFT_PULSE, GPIO_PIN_SET);
-    // 아주 짧은 지연 (펄스 생성)
-    for(volatile int i=0; i<50; i++);
-    HAL_GPIO_WritePin(PIN_STEP_LIFT_PULSE, GPIO_PIN_RESET);  // 타이머 인터럽스가 1ms마다 돌고있다고 가정하고 추가 delay를 주지 않는다
+	// 1. 핀 상태를 반전 (High -> Low 혹은 Low -> High)
+	HAL_GPIO_TogglePin(PIN_STEP_LIFT_PULSE);
 
-    // 현재 위치 기록 (상승 중이면 +, 하강 중이면 -)
-    if (g_sys_status.liftDirection == LIFT_DIR_UP) g_sys_status.current_step_pos++;
-    else if (g_sys_status.liftDirection == LIFT_DIR_DOWN) g_sys_status.current_step_pos--;
-
+	// 2. 핀이 SET(High)일 때만 실제 스텝 카운트를 수행
+    if (HAL_GPIO_ReadPin(PIN_STEP_LIFT_PULSE) == GPIO_PIN_SET) {
+    	if (g_sys_status.liftDirection == LIFT_DIR_UP) g_sys_status.current_step_pos++;
+    	else if (g_sys_status.liftDirection == LIFT_DIR_DOWN) g_sys_status.current_step_pos--;
+    }
     // [함수 요약]
-    // 1. 아주 짧은 펄스 생성 (50us - 이후 인터럽트)
+    // 1. 짧은 시간에 핀을 토글하여 온오프
     // 2. 만약 리프트의 방향이 윗쪽이라면, 현재 리프트의 실제 스텝(높이) 상황 +1
     // 3. 만약 리프트의 방향이 아랫쪽이라면, 현재 리프트의 실제 스텝(높이) 상황 -1
 }
@@ -88,7 +87,7 @@ void BSP_Stepper_Home(void) {
     // 2. 리프트의 방향을 아래로 향한다고 상태값과 핀(출력)을 설정한다
     // 3. enable = 1인 BSP_Stepper_SetEnable 함수를 실행하며, is_step_enable(스텝 모터 활성화) 상태로 바꾼다
     // 4. 1층의 근접센서가 RESET(작동)할 때까지 펄스를 준다
-    // 5. 1층의 근섭 센서 예상 범위를 넘었는데도(safety_counter > 7000)작동하고 있다면, 에러처리하며 리프트 작동을 중단한다
+    // 5. 1층의 근섭 센서 예상 범위를 넘었는데도(safety_counter > 12000)작동하고 있다면, 에러처리하며 리프트 작동을 중단한다
     // 6. 1층에 도착하면, 값을 초기화한다.
 }
 
@@ -113,53 +112,45 @@ void BSP_Stepper_MoveToFloor(uint8_t floor) {
         g_sys_status.target_step_pos = 0;	// 목표 층 스텝 (2층: 0)
     }
 
-    // 이동량 계산: 목적지(floor 2면 5000, 1이면 0)와 현재 위치의 차이
-    uint32_t step_to_move = abs((int)g_sys_status.target_step_pos - (int)g_sys_status.current_step_pos);
-
-
-    // DMA 시작: "계산된 step_to_move 만큼 펄스 쏴라"
-    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, &pulse_val, step_to_move);
+    // 인터럽트(IT) 시작
+    HAL_TIM_Base_Start_IT(&htim2);
 
     // [함수 요약]
     // 1. BSP_Stepper_MoveToFloor : 리프트(스텝모터)가 목표층으로 이동 할 때 켜지는 함수
     // 2. 반환: 만약 영점이 맞지 않거나, 이미 목표층이면 그대로 반환
     // 3. 만약 2층이 목표라면, 상태와 핀을 윗방향으로. 1층이 목표라면 아랫방향으로 정하고, 목표 층의 스텝 위치를 정한다
-    // 4. 이동량을 계산해서, DMA에 방향과 이동량을 전송한다
+    // 4. 인터럽트 신호를 보낸다
 }
 
 
 /**
- * @brief DMA 완료 콜백 (목적지 도착 시점)
+ * @brief 타이머 인터럽트 완료 콜백 (목적지 도착 지점)
+ * 속도가 느리다면 htim2의 Prescaler나 Period 값을 조정해볼 것
  */
-void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {	// 펄스를 목표치만큼 쏘고 전부 완수했다는 신호 알림
-    if (htim->Instance == TIM1) {
-        HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);	// 동작 중인 펄스 중단 신호 보내기
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM2) {
+        // 현재 위치가 목표 위치와 다르면 계속 한 스텝씩 이동
+        if (g_sys_status.current_step_pos != g_sys_status.target_step_pos) {
+            BSP_Stepper_SingleStep();
+        }
+        else {
+            // 목표 도달 시 타이머 중단 및 상태 업데이트
+            HAL_TIM_Base_Stop_IT(&htim2);
 
-        // 장부 업데이트 (목표치 도달 확정)
-        g_sys_status.current_step_pos = g_sys_status.target_step_pos;
-        g_sys_status.lift_current_floor = g_sys_status.target_floor;
-        g_sys_status.is_lift_busy = 0;
-        g_sys_status.liftDirection = LIFT_DIR_STOP;
+            // 정지 시 핀을 Low로 확실히 고정
+            HAL_GPIO_WritePin(PIN_STEP_LIFT_PULSE, GPIO_PIN_RESET);
 
+            g_sys_status.lift_current_floor = g_sys_status.target_floor;
+            g_sys_status.is_lift_busy = 0;
+            g_sys_status.liftDirection = LIFT_DIR_STOP;
+        }
         // [함수 요약]
-        // 1. HAL_TIM_PWM_Start_DMA 에 의해 목표치만큼 펄스를 쏘면 HAL_PWM_PulseFinishedCallback 함수가 실행된다
-        // 2. 만약 해당 타이머의 주소가 TIM2 라면, 펄스 중단 신호를 보낸다. (확실하게 정리)
-        // 3. 장부를 업데이트 한다
+        // 1. HAL_TIM_PWM_Start_DMA 에 의해 목표치만큼 펄스를 쏘면 인터럽트 콜백 함수가 실행된다
+        // 2. 만약 현재 위치가 목표층의 위치오 다르다면, 계속해서 한 칸씩 증가한다.
+        // 3. 만약 도착했다면, 중단 신호를 보낸다
 
     }
 }
 
 
 
-
-/* [의존성 1] 하드웨어 자원 설정 (main.c / stm32f4xx_it.c) */
-// - htim2: 타이머2가 PWM 및 DMA 모드로 초기화되어 있어야 함 (PB12 핀 연동)
-// - DMA Handle: 타이머2와 연결된 DMA 채널 설정이 필요함
-// - NVIC: 타이머 전송 완료 인터럽트가 활성화되어 있어야 Callback 함수가 호출됨
-
-/* [의존성 2] 오버런 방지 (drv_exti.c) */
-// - PA0(1층), PA1(2층) 센서의 인터럽트가 설정되어 있어야 함
-// - 이동 중 센서 감지 시 HAL_TIM_PWM_Stop_DMA()를 호출하여 물리적 충돌을 방지해야 함
-
-/* [의존성 3] 공정 판단 두뇌 (app_fsm.c) */
-// - 시스템의 현재 모드(STATE_BOOT 등)를 결정하여 BSP_Stepper_Home() 등을 적절한 시점에 호출해야 함
