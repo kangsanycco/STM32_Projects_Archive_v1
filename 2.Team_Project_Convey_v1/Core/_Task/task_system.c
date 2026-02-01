@@ -31,10 +31,35 @@ void TASK_System_Execute(void) {
     if (current_tick - last_tick_100ms >= 100) {
         last_tick_100ms = current_tick;	 // 100ms 마다 갱신
 
-        // [입] 현재 공정 상태(FSM), 리프트 위치 등을 PC 서버로 보고
+        // 현재 공정 상태(FSM), 리프트 위치 등을 PC 서버로 보고
         DRV_UART_TxReport();
 
-        // [발] 서버에서 받은 속도값이나 제어 명령을 실제 서보 드라이버(PCA9685)에 전달
+        // 컨베이어 가동 금지 상황 필터링]
+        // 상황 1: 전체 정지(IDLE)나 에러/긴급 상황일 때
+        if (g_sys_status.mainState != STATE_RUNNING) {
+            g_sys_status.speed_main_convey = 0;
+            g_sys_status.speed_sort_convey = 0;
+            g_sys_status.speed_load_convey = 0;
+        }
+        else {
+            // 시스템이 RUNNING 중이더라도 세부 공정에 따라 차단
+
+            // 상황 2: 로봇 작업 중에는 메인(1,2) 컨베이어 정지
+            if (g_sys_status.sortState == SORT_ROBOT_WORK) {
+                g_sys_status.speed_main_convey = 0;
+                g_sys_status.speed_sort_convey = 0;
+            }
+
+
+            // 상황 3: 리프트가 이동 중이면 적재(4) 컨베이어 정지 (기구 파손 방지)
+            if (g_sys_status.liftDirection != LIFT_DIR_STOP) {
+                g_sys_status.speed_load_convey = 0;
+            }
+        }
+
+
+
+        // 서버에서 받은 속도값이나 제어 명령을 실제 서보 드라이버(PCA9685)에 전달
         BSP_Servo_Control_Speed();
     }
 }

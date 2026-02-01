@@ -206,9 +206,7 @@ void APP_FSM_Execute(void) {
                 }
                 // 2. AGV 도착 시: 고정된 state_timer 기준으로 2초간 가동
                 else {
-                    if (HAL_GetTick() - g_sys_status.state_timer < 2000) {
-                        g_sys_status.speed_load_convey = 50;
-                    } else {
+                    if (HAL_GetTick() - g_sys_status.state_timer >= 2000) {
                         g_sys_status.speed_load_convey = 0;
                     }
                 }
@@ -225,7 +223,7 @@ void APP_FSM_Execute(void) {
 
                     // [함수 요약]
                     // 1. 적재 대기 상태일 때, AGV가 도착하지 않았다면, 컨베이어 속도는 0이 되고, 타이머를 센다
-                    // 2. 만약, AGV가 도착 상태라면, 2000ms 동안 50%의 컨베이어를 가동한다, 끝나면 0이 된다
+                    // 2. 만약, AGV가 도착 상태라면, 2000ms 동안 장부의 속도로 컨베이어를 가동한다, 끝나면 0이 된다
                     // 3. AGV가 출발하면 컨베이어를 멈추고, 빈 랙을 탐색한다
                     // 4. 만약 랙에 빈 공간이 있다면, 목표층을 정하고, 적재파트 상태를 LOAD_LIFT_MOVE(리프트가 움직이는) 것으로 바꾼다
 
@@ -255,8 +253,7 @@ void APP_FSM_Execute(void) {
 
 
             case LOAD_RACK_INSERT:
-                // [흐름도 6번] 해당 층에서 컨베이어 재가동하여 랙에 투입
-                g_sys_status.speed_load_convey = 50;
+                // [흐름도 6번] 해당 층에서 컨베이어 재가동하여 랙에 투입, 장부에서 자동 적용
 
                 // 2초(일정 시간) 경과 후 중지 및 1층 복귀
                 if (HAL_GetTick() - g_sys_status.state_timer >= 2000) {
@@ -267,7 +264,7 @@ void APP_FSM_Execute(void) {
                 break;
 
                 // [함수 요약]
-                // 1. 현재 상태가 LOAD_RACK_INSERT(투입 중)이라면, 컨베이어의 속도를 50으로 바꾼다
+                // 1. 현재 상태가 LOAD_RACK_INSERT(투입 중)이라면, 컨베이어의 속도를 장부의 값으로 바꾼다
                 // 2. 투입 시작으로 부터 2000ms 가 지나면, 컨베이어 속도는 0으로 변경된다
                 // 3. 리프트는 1층으로 이동하며, 도착 시 LOAD_IDLE(대기 중) 상태로 변경된다
 
