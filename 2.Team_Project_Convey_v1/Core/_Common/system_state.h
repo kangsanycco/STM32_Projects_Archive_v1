@@ -110,10 +110,10 @@ typedef struct {
 
     // 3. 물리 센서 실시간 상태 (PA/PC Input 핀 직접 매칭)
     uint8_t sensor_robot_area;             // PA10: 로봇 분류 구역 내 물체 감지 유무
-    uint8_t sensor_robot_done;             // PC6: 로봇으로부터 작업 완료 신호 수신 여부 (0: 로봇 작업 완료, 1: 로봇 작업 중)
-    uint8_t sensor_lift_1f;                // PA0: 리프트 1층(영점) 도달 확인 센서 (0: 센서 감지, 1: 비감지)
+    uint8_t sensor_robot_done;             // 로봇으로부터 작업 완료 신호 수신 여부 (0: 로봇 작업 완료, 1: 로봇 작업 중)
+    uint8_t sensor_lift_1f;                // PA6: 리프트 1층(영점) 도달 확인 센서 (0: 센서 감지, 1: 비감지)
     uint8_t signal_lift_2f;                // 리프트 2층 도달 신호	(0: 도착 안함, 1: 2층 도착)
-    uint8_t sensor_lift_overrun_2f;		   // PA1: 리프트 2층 범위 이탈
+    uint8_t sensor_lift_overrun_2f;		   // PA7: 리프트 2층 범위 이탈
     uint8_t sensor_rack_full_1f;           // PA4: 1층 적재함 물품 존재 여부
     uint8_t sensor_rack_full_2f;           // PA5: 2층 적재함 물품 존재 여부
 

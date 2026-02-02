@@ -46,3 +46,47 @@ void DRV_I2C_Init(void)
 }
 
 
+/**
+ * @brief 로봇에게 동작 시작 명령 전송
+ */
+HAL_StatusTypeDef DRV_I2C_Robot_SendStart(void)
+{
+    uint8_t cmd = ROBOT_ORDER_START; // config.h의 0x01
+    // 로봇은 레지스터 구조가 아닐 수 있으므로 일반 Transmit 사용
+    return HAL_I2C_Master_Transmit(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, &cmd, 1, 10);
+}
+
+/**
+ * @brief 로봇으로부터 현재 상태 읽기
+ */
+uint8_t DRV_I2C_Robot_ReadStatus(void)
+{
+    uint8_t status = 0;
+    // 로봇 제어기로부터 1바이트 데이터 수신
+    if (HAL_I2C_Master_Receive(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, &status, 1, 10) != HAL_OK) {
+        return 0; // 통신 실패 시 기본값
+    }
+    return status;
+}
+
+
+
+void DRV_I2C_Robot_ReceiveInterrupt(uint8_t *pBuffer)
+{
+    // 인터럽트 방식으로 1바이트 수신 대기 (CPU는 다른 일을 할 수 있음)
+    HAL_I2C_Master_Receive_IT(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, pBuffer, 1);
+}
+
+
+
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C1) // config.h의 hi2c1 인스턴스 확인
+    {
+        // 수신된 전역 버퍼(예: g_robot_rx_buf) 값이 완료 신호(0x02)인지 확인
+        if (g_robot_rx_buf == ROBOT_STATUS_DONE)
+        {
+            g_sys_status.sensor_robot_done = 1; // FSM을 깨우는 플래그 업데이트
+        }
+    }
+}

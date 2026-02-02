@@ -15,8 +15,8 @@
 // 1. [PIN] 센서류 (입력)
 // 1속성: PIN_Sensor / 2속성: 주체 / 3속성: 대상
 #define PIN_SENSOR_ROBOT_AREA   GPIOA, GPIO_PIN_10  // 로봇 작업 영역 (적외선)
-#define PIN_SENSOR_LIFT_1F  	GPIOA, GPIO_PIN_0   // 리니어 1층 도착 및 원점 (근접)
-#define PIN_SENSOR_LIFT_2F  	GPIOA, GPIO_PIN_1   // 리니어 2층 범위 이탈 감지 (근접), 2층 도착 감지 센서 아님
+#define PIN_SENSOR_LIFT_1F  	GPIOA, GPIO_PIN_6   // 리니어 1층 도착 및 원점 (근접)
+#define PIN_SENSOR_LIFT_2F  	GPIOA, GPIO_PIN_7   // 리니어 2층 범위 이탈 감지 (근접), 2층 도착 감지 센서 아님
 #define PIN_SENSOR_RACK_1F	 	GPIOA, GPIO_PIN_4   // 1층 랙 물품 유무 (적외선) (0: 물품 있음/감지, 1: 물품 없음)
 #define PIN_SENSOR_RACK_2F	 	GPIOA, GPIO_PIN_5   // 2층 랙 물품 유무 (적외선) (0: 물품 있음/감지, 1: 물품 없음)
 
@@ -27,9 +27,9 @@
 #define PIN_STEP_LIFT_ENABLE		GPIOB, GPIO_PIN_14	// 활성화
 
 
-// 3. [PIN] 로봇 인터페이스 (물리 신호 필요 시) - (임시: 서버로 받을지, 핀으로 받을지 고려)
-#define PIN_ROBOT_WORK     GPIOA, GPIO_PIN_7 // 로봇 동작 시작 (OUT), UART2 PA2와 인터럽트 충돌은 없음
-#define PIN_ROBOT_DONE     GPIOA, GPIO_PIN_6 // 로봇 동작 완료 (IN), UART2 PA3과 인터럽트 충돌은 없음
+// 3. 로봇 인터페이스 (물리 신호 필요 시) - (임시: 서버로 받을지, 핀으로 받을지 고려)
+#define ROBOT_ORDER_START      0x01    // 로봇 동작 시작 커맨드 (STM32 -> 로봇)
+#define ROBOT_STATUS_DONE      0x02    // 로봇 동작 완료 상태 값 (로봇 -> STM32)
 
 
 // 4. 비전 데이터 저장용 큐 크기
@@ -45,6 +45,7 @@
 
 // 6. [ADDR] I2C 주소
 #define ADDR_I2C_PCA9685     (0x40 << 1)
+#define ADDR_I2C_ROBOT       (0x10 << 1)
 
 
 // 7. [HAL] 통신 핸들

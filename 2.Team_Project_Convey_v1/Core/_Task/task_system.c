@@ -31,6 +31,13 @@ void TASK_System_Execute(void) {
     if (current_tick - last_tick_100ms >= 100) {
         last_tick_100ms = current_tick;	 // 100ms 마다 갱신
 
+        if (g_sys_status.sortState == SORT_ROBOT_WORK) {
+            if (DRV_I2C_Robot_ReadStatus() == ROBOT_STATUS_DONE) {
+                g_sys_status.sensor_robot_done = 1;
+                g_sys_status.is_robot_work = 0; // 작업 종료 플래그
+            }
+        }
+
         // 현재 공정 상태(FSM), 리프트 위치 등을 PC 서버로 보고
         DRV_UART_TxReport();
 

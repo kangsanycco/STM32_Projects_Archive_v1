@@ -91,10 +91,10 @@ void APP_FSM_Execute(void) {
 
         // 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
     	if (g_sys_status.mainState == STATE_EMERGENCY_ROBOT) {
-    		if (!g_sys_status.sensor_robot_done) { // 로봇이 완료 신호를 주면
-    		    HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
+    		if (g_sys_status.sensor_robot_done) {
     		    g_sys_status.is_robot_work = 0;
-    		    g_sys_status.mainState = STATE_IDLE; // 다시 완전 비상태로 복귀
+    		    g_sys_status.sensor_robot_done = 0; // 플래그 클리어
+    		    g_sys_status.mainState = STATE_IDLE;
     		}
     		return;
 
@@ -156,11 +156,13 @@ void APP_FSM_Execute(void) {
                 if (!g_sys_status.sensor_robot_area) {
                     CameraResult_t item = visionQ_pop();
                     if (item == ITEM_LARGE) {
-                        g_sys_status.sortState = SORT_ROBOT_WORK;
+                    	if (DRV_I2C_Robot_SendStart() == HAL_OK) {
+                    	    g_sys_status.is_robot_work = 1;
+                    	    g_sys_status.sensor_robot_done = 0; // 작업 시작 전 완료 플래그 초기화
+                    	    g_sys_status.sortState = SORT_ROBOT_WORK;
+                        }
                     }
                 }
-
-                //  AGV 출발 신호 수신 시 다시 IDLE(정지)로 복귀
                 if (g_sys_status.rx_agv_sort_departed) {
                     g_sys_status.sortState = SORT_IDLE;
                 }
@@ -178,12 +180,11 @@ void APP_FSM_Execute(void) {
                 g_sys_status.speed_sort_convey = 0;
 
                 g_sys_status.is_robot_work = 1;
-                HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_SET);
 
                 // 로봇 작업 완료 신호 시 다시 가동(RUNNING)
-                if (!g_sys_status.sensor_robot_done) {
+                if (g_sys_status.sensor_robot_done) {
                     g_sys_status.is_robot_work = 0;
-                    HAL_GPIO_WritePin(PIN_ROBOT_WORK, GPIO_PIN_RESET);
+                    g_sys_status.sensor_robot_done = 0;
                     g_sys_status.sortState = SORT_RUNNING;
                 }
                 break;
