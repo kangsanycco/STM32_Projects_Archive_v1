@@ -27,9 +27,9 @@
 #define PIN_STEP_LIFT_ENABLE		GPIOB, GPIO_PIN_14	// 활성화
 
 
-// 3. 로봇 인터페이스 (물리 신호 필요 시) - (임시: 서버로 받을지, 핀으로 받을지 고려)
-#define ROBOT_ORDER_START      0x01    // 로봇 동작 시작 커맨드 (STM32 -> 로봇)
-#define ROBOT_STATUS_DONE      0x02    // 로봇 동작 완료 상태 값 (로봇 -> STM32)
+// 3. 로봇(램스보드 1.4)와 주고 받을 신호
+#define ROBOT_ORDER_START    0x01  // 램스보드에 시작하라고 보내는 신호
+#define ROBOT_SIGNAL_DONE    0x02  // 램스보드에서 끝났다고 로봇이 보내주는 신호
 
 
 // 4. 비전 데이터 저장용 큐 크기
@@ -45,7 +45,7 @@
 
 // 6. [ADDR] I2C 주소
 #define ADDR_I2C_PCA9685     (0x40 << 1)
-#define ADDR_I2C_ROBOT       (0x10 << 1)
+#define ADDR_I2C_ROBOT       (0x08 << 1)
 
 
 // 7. [HAL] 통신 핸들

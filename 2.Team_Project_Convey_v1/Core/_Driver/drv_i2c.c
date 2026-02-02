@@ -57,7 +57,7 @@ HAL_StatusTypeDef DRV_I2C_Robot_SendStart(void)
 }
 
 /**
- * @brief 로봇으로부터 현재 상태 읽기
+ * @brief 필요할 때 즉시, 로봇으로부터 현재 상태 읽기. 수동용 함수
  */
 uint8_t DRV_I2C_Robot_ReadStatus(void)
 {

@@ -32,8 +32,8 @@ void TASK_System_Execute(void) {
         last_tick_100ms = current_tick;	 // 100ms 마다 갱신
 
         if (g_sys_status.sortState == SORT_ROBOT_WORK) {
-            if (DRV_I2C_Robot_ReadStatus() == ROBOT_STATUS_DONE) {
-                g_sys_status.sensor_robot_done = 1;
+        	// 콜백이 바꿔준 플래그만 체크
+        	if (g_sys_status.sensor_robot_done == 1) {
                 g_sys_status.is_robot_work = 0; // 작업 종료 플래그
             }
         }

@@ -69,6 +69,7 @@ void APP_FSM_Execute(void) {
 
 	    // 아직 영점을 안 잡은 상태라면 (최초 1회 혹은 재부팅 신호 시)
 	    APP_FSM_Init(); // 여기서 비로소 리프트 영점을 잡고 IDLE로 바꿉니다.
+	    g_sys_status.mainState = STATE_RUNNING;
 	    return;
 
 	}
@@ -159,6 +160,7 @@ void APP_FSM_Execute(void) {
                     	if (DRV_I2C_Robot_SendStart() == HAL_OK) {
                     	    g_sys_status.is_robot_work = 1;
                     	    g_sys_status.sensor_robot_done = 0; // 작업 시작 전 완료 플래그 초기화
+                    	    DRV_I2C_Robot_ReceiveInterrupt(&g_robot_rx_buf);
                     	    g_sys_status.sortState = SORT_ROBOT_WORK;
                         }
                     }
@@ -200,7 +202,12 @@ void APP_FSM_Execute(void) {
         // --- Step 5 & 6: 적재 공정 및 리니어 제어 (Load Part) ---
         switch (g_sys_status.loadState) {
         	case LOAD_IDLE:
-                // 1. 초기화: AGV가 없을 때는 컨베이어 정지 및 타이머 대기
+                // 0. 만약 리프트가 움직이지 않고, 리프트 1층 센서가 감지가 되면, 1층으로 인식
+        		if (!g_sys_status.is_lift_busy && !g_sys_status.sensor_lift_1f) {
+        		    g_sys_status.lift_current_floor = 1;
+        		}
+
+        		// 1. 초기화: AGV가 없을 때는 컨베이어 정지 및 타이머 대기
                 if (!g_sys_status.rx_agv_load_arrived) {
                     g_sys_status.speed_load_convey = 0;
                     g_sys_status.state_timer = HAL_GetTick(); // 도착 전까지 계속 갱신 (도착 시점 잡기 위함)
@@ -232,30 +239,28 @@ void APP_FSM_Execute(void) {
                 break;
 
             case LOAD_LIFT_MOVE:
-                // 아직 이동 시작 전이라면 (busy가 0일 때 시작)
-                if (!g_sys_status.is_lift_busy && (g_sys_status.lift_current_floor != g_sys_status.target_floor)) {
-                    BSP_Stepper_MoveToFloor(g_sys_status.target_floor);
-                }
+            	// 1. 이미 이동 중(busy)이라면 아무것도 하지 말고 기다림
+            	if (g_sys_status.is_lift_busy) return;
 
-                // 이동이 끝났다면 (DMA 콜백에 의해 busy가 0이 되고 층이 업데이트됨)
-                if (!g_sys_status.is_lift_busy && (g_sys_status.lift_current_floor == g_sys_status.target_floor)) {
-                    g_sys_status.loadState = LOAD_RACK_INSERT;
-                    g_sys_status.state_timer = HAL_GetTick();
+            	// 2. 멈춰있는데 목표 층이 아니라면 이동 시작
+            	if (g_sys_status.lift_current_floor != g_sys_status.target_floor) {
+            	    BSP_Stepper_MoveToFloor(g_sys_status.target_floor);
+            	}
+            	// 3. 멈춰있고 목표 층에 도착했다면 상태 전환
+            	else {
+            	    g_sys_status.loadState = LOAD_RACK_INSERT;
+            	    g_sys_status.state_timer = HAL_GetTick();
 
-                    // [함수 요약]
-                    // 1. 리프트가 작동 중일 때
-                    // 2. 리프트가 정지 상태라면, 목표층으로 리니어 이동
-                    // 3. 현재 리니어 위치(높이) 와 목표 층의 위치(높이)가 같다면
-                    // 4. 상태는 LOAD_RACK_INSERT(랙에 물품을 집어넣는다)가 되며, 투입 시간을 측정한다
-
+            	    // [함수 요약]
+                    // 1. 이미 작동 중이라면 기다린다. 끝나는 타이밍은 Bsp_Stepper.c 의 HAL_TIM_PeriodElapsedCallback 함수를 참고한다
+            	    // 2. 멈춰 있는데 목표 층이 아니라면 이동을 시작한다
+            	    // 3. 멈춰있고 목표 층에 도착했다면 상태를 전환한다
                 }
                 break;
 
 
 
             case LOAD_RACK_INSERT:
-                // [흐름도 6번] 해당 층에서 컨베이어 재가동하여 랙에 투입, 장부에서 자동 적용
-
                 // 2초(일정 시간) 경과 후 중지 및 1층 복귀
                 if (HAL_GetTick() - g_sys_status.state_timer >= 2000) {
                     g_sys_status.speed_load_convey = 0;

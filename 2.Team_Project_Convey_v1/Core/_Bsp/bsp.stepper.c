@@ -145,7 +145,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             g_sys_status.liftDirection = LIFT_DIR_STOP;
         }
         // [함수 요약]
-        // 1. HAL_TIM_PWM_Start_DMA 에 의해 목표치만큼 펄스를 쏘면 인터럽트 콜백 함수가 실행된다
+        // 1. HAL_TIM_Base_Start_IT 에 의해 목표치만큼 펄스를 쏘면 인터럽트 콜백 함수가 실행된다
         // 2. 만약 현재 위치가 목표층의 위치오 다르다면, 계속해서 한 칸씩 증가한다.
         // 3. 만약 도착했다면, 중단 신호를 보낸다
 
