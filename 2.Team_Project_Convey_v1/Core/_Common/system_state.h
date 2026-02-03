@@ -16,29 +16,30 @@
  */
 typedef enum {
 	STATE_BOOT = 0,							// 전원 ON 직후와 초기화 작업
-    STATE_IDLE = 1,             			// 전원 ON 후 UART 가동 승인 대기 (전체 컨베이어 OFF)
-    STATE_RUNNING = 2,       	    		// 가동 승인 후 메인/분류 컨베이어 구동 중,
+    STATE_IDLE = 1,             			// 정지 후 대기 상태 (UART 가동 승인 대기)
+    STATE_RUNNING = 2,       	    		// 전체 공정 가동 중
 	STATE_STOP = 3,							// 일반 정지
-	STATE_EMERGENCY_ROBOT = 4,				// 정지 중 로봇 잔여 작업
-    STATE_EMERGENCY = 5,        		  	// 비상 정지
+	STATE_ROBOT_END = 4,				    // 정지 중 로봇 잔여 작업
+    STATE_EMERGENCY = 5,        		   	// 비상 정지
 } MainControlState_t;
 
 /**
+ *
  * [그룹 B] 분류 공정 상세 상태 (모터 1, 2, 3 및 로봇 제어)
  */
 typedef enum {
-    SORT_IDLE = 0,       // 메인&분류 컨베이어 멈춤 (AGV가 없거나, 로봇 작업이 없거나, 정지 명령 시)
-    SORT_ROBOT_WORK = 1, // 로봇 작업 중 (컨베이어 일시 정지)
-    SORT_RUNNING = 2     // AGV 도착 확인됨, 모든 컨베이어 가동 (상차 중)
+    SORT_IDLE = 0,       // 메인&분류 컨베이어 멈춤 (AGV가 없을 떄)
+    SORT_ROBOT_WORK = 1, // 로봇 작업 중 (메인&분류 컨베이어 일시 정지)
+    SORT_RUNNING = 2     // AGV 도착 확인됨, 메인&분류 컨베이어 가동
 } SortState_t;
 
 /**
  * [그룹 C] 적재 공정 상세 상태 (모터 4 및 리니어 제어)
  */
 typedef enum {
-    LOAD_IDLE = 0,          // 1층 대기 (AGV 수령 중 포함)
-    LOAD_LIFT_MOVE = 1,     // 리프트 작동 중, 목표 층(1층, 2층)으로 상승 또는 복귀 이동
-    LOAD_RACK_INSERT = 2    // 해당 층 도착 후 랙에 물건 밀어넣기
+    LOAD_IDLE = 0,          // 1층 복귀 & 대기 (AGV 수령 중 포함)
+    LOAD_LIFT_MOVE = 1,     // 리프트 작동 중, 목표 층(1층, 2층)으로 이동
+    LOAD_RACK_INSERT = 2    // 해당 층 도착 후 랙에 물건 밀어넣기, 복귀 신호 전달
 } LoadState_t;
 
 /**
@@ -86,7 +87,7 @@ typedef enum {
 } ErrorCode_t;
 
 typedef struct {
-    CameraResult_t slot[VISION_QUEUE_SIZE];	// 창고 칸
+    CameraResult_t slot[VISION_QUEUE_SIZE];	// 창고(구조체)
     uint8_t head;	// 맨 앞줄, 데이터를 가장 먼저 꺼내는 곳 (출구)
     uint8_t tail;	// 맨 뒷줄, 데이터가 새로 들어와서 붙는 곳 (입구)
     uint8_t count;	// 현재 재고량
@@ -109,20 +110,20 @@ typedef struct {
     uint8_t            is_scan_done;   // 비전 PC로부터 새로운 판독 데이터가 수신됨을 알림
 
     // 3. 물리 센서 실시간 상태 (PA/PC Input 핀 직접 매칭)
-    uint8_t sensor_robot_area;             // PA10: 로봇 분류 구역 내 물체 감지 유무
-    uint8_t sensor_robot_done;             // 로봇으로부터 작업 완료 신호 수신 여부 (0: 로봇 작업 완료, 1: 로봇 작업 중)
+    uint8_t sensor_robot_area;             // PA10: 로봇 분류 구역 내 물체 감지 유무 (0: 물체 감지, 1: 물체 감지 없음)
+    uint8_t sensor_robot_done;             // 로봇으로부터 작업 완료 신호 수신 여부 (0: 로봇 대기 중, 1: 로봇 작업 완료)
     uint8_t sensor_lift_1f;                // PA6: 리프트 1층(영점) 도달 확인 센서 (0: 센서 감지, 1: 비감지)
     uint8_t signal_lift_2f;                // 리프트 2층 도달 신호	(0: 도착 안함, 1: 2층 도착)
-    uint8_t sensor_lift_overrun_2f;		   // PA7: 리프트 2층 범위 이탈
-    uint8_t sensor_rack_full_1f;           // PA4: 1층 적재함 물품 존재 여부
-    uint8_t sensor_rack_full_2f;           // PA5: 2층 적재함 물품 존재 여부
+    uint8_t sensor_lift_overrun_2f;		   // PA7: 리프트 2층 범위 이탈 (0: 범위 이탈. 1: 문제 없음)
+    uint8_t sensor_rack_full_1f;           // PA4: 1층 적재함 물품 존재 여부 (0: 물품 존재, 1: 물품 없음)
+    uint8_t sensor_rack_full_2f;           // PA5: 2층 적재함 물품 존재 여부 (0: 물품 존재, 1: 물품 없음)
 
     // 4. 소프트웨어 플래그 (UART2 Rx 8바이트 패킷 데이터 기반)
     uint8_t rx_uart2_approved;       	   // 서버로부터의 가동 승인 신호 (Run/Stop)
-    uint8_t rx_agv_sort_arrived;      	   // 분류부 AGV 도착 (상차 준비됨)
-    uint8_t rx_agv_sort_departed;          // 분류부 AGV 출발 (상차 끝남)
-    uint8_t rx_agv_load_arrived;      	   // 적재부 AGV 도착 (하차 준비됨)
-    uint8_t rx_agv_load_departed;          // 적재부 AGV 출발 (하차 끝남)
+    uint8_t rx_agv_sort_arrived;      	   // 분류부 AGV 도착 (상차 준비됨) (0: 도착하지 않음 / 1: 도착함)
+    uint8_t rx_agv_sort_departed;          // 분류부 AGV 출발 (상차 끝남) (0: 출발하지 않음 / 1: 출발함)
+    uint8_t rx_agv_load_arrived;      	   // 적재부 AGV 도착 (하차 준비됨) (0: 도착하지 않음 / 1: 도착함)
+    uint8_t rx_agv_load_departed;          // 적재부 AGV 출발 (하차 끝남) (0: 출발하지 않음 / 1: 출발함)
 
     // 5. 구동부 출력 상태 (실제 하드웨어 제어 명령 값 기록)
     uint8_t speed_main_convey;  	       // 모터 1, 2 (메인 라인) PWM 속도 값
@@ -132,12 +133,13 @@ typedef struct {
     uint8_t is_step_enable;				   // PB14: 스텝 모터 활성화(시동) (Emergency 차단용)
 
     // 6. 리프트(스텝 모터) 물리 정보
-    uint8_t  is_lift_homed;          // 전원 투입 후 영점 완료 여부
+    uint8_t  is_lift_homed;          // 전원 투입 후 영점 완료 여부 (0: 영점 잡지 않음 / 1: 영점 잡음)
     uint8_t  lift_current_floor;     // 리프트 현재 층수 (1 또는 2)
     uint8_t  target_floor;           // 이동해야 할 목표 층수
-    uint8_t  is_lift_busy;           // 리프트 이동 여부(1: 이동 중, 0: 대기 중, is_step_enable 과 전원과 동작 여부에서 다름) (
+    uint8_t  is_lift_busy;           // 리프트 이동 여부(0: 대기 중, 1:이동 중)
     int32_t  current_step_pos;       // 현재 리프트의 실제 스텝(높이)상황
-    int32_t  target_step_pos;        // 이동해야 할 최종 목표 스텝 상황
+    int32_t  target_step_pos;        // 목표 이동 스텝 수
+
 
     // 7. 통계 및 타이머
     uint32_t   state_timer;            // 공정 내 지연 시간(Time-out)이나 대기 시간 카운트

@@ -29,7 +29,7 @@
 
 // 3. 로봇(램스보드 1.4)와 주고 받을 신호
 #define ROBOT_ORDER_START    0x01  // 램스보드에 시작하라고 보내는 신호
-#define ROBOT_SIGNAL_DONE    0x02  // 램스보드에서 끝났다고 로봇이 보내주는 신호
+#define ROBOT_STATUS_DONE    0x02  // 램스보드에서 끝났다고 로봇이 보내주는 신호
 
 
 // 4. 비전 데이터 저장용 큐 크기
@@ -38,9 +38,9 @@
 
 // 5. 컨베이어 모터 채널 (PCA9685)
 #define MOTOR_CH_MAIN1_CONV  0  // 메인 라인 1 컨베이어
-#define MOTOR_CH_MAIN2_CONV  1  // 메인 라인 2 컨베이어(CONV0 과 통합)
-#define MOTOR_CH_SORT_CONV   2  // 분류 파트 컨베이어
-#define MOTOR_CH_LOAD_CONV   3  // 적재 파트 컨베이어
+#define MOTOR_CH_MAIN2_CONV  4  // 메인 라인 2 컨베이어(CONV0 과 통합)
+#define MOTOR_CH_SORT_CONV   8  // 분류 파트 컨베이어
+#define MOTOR_CH_LOAD_CONV   12  // 적재 파트 컨베이어
 
 
 // 6. [ADDR] I2C 주소

@@ -83,7 +83,7 @@ void APP_FSM_Execute(void) {
 
         // 로봇 잔여 작업 체크
         if (g_sys_status.is_robot_work == 1) {
-                g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+                g_sys_status.mainState = STATE_ROBOT_END;
             } else if (!g_sys_status.is_lift_busy) { // 로봇 안하면 리프트 확인 후 IDLE
                     g_sys_status.mainState = STATE_IDLE;
             }
@@ -91,7 +91,7 @@ void APP_FSM_Execute(void) {
         }
 
         // 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
-    	if (g_sys_status.mainState == STATE_EMERGENCY_ROBOT) {
+    	if (g_sys_status.mainState == STATE_ROBOT_END) {
     		if (g_sys_status.sensor_robot_done) {
     		    g_sys_status.is_robot_work = 0;
     		    g_sys_status.sensor_robot_done = 0; // 플래그 클리어
@@ -114,7 +114,7 @@ void APP_FSM_Execute(void) {
 
     	// STOP 시에도 로봇이 작업 중이면 마무리 단계로 보냄
     	if (g_sys_status.is_robot_work == 1) {
-    	    g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+    	    g_sys_status.mainState = STATE_ROBOT_END;
     	}
     	else if (!g_sys_status.is_lift_busy) {
     	    g_sys_status.mainState = STATE_IDLE;
