@@ -29,7 +29,9 @@
 
 // 3. 로봇(램스보드 1.4)와 주고 받을 신호
 #define ROBOT_ORDER_START    0x01  // 램스보드에 시작하라고 보내는 신호
-#define ROBOT_STATUS_DONE    0x02  // 램스보드에서 끝났다고 로봇이 보내주는 신호
+#define ROBOT_WORK_TIME_MS   5000  // 로봇 작업 예상 소요 시간 (5초)
+
+//#define ROBOT_STATUS_DONE    0x02  // 램스보드에서 끝났다고 로봇이 보내주는 신호
 
 
 // 4. 비전 데이터 저장용 큐 크기

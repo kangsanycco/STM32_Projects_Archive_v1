@@ -59,38 +59,38 @@ HAL_StatusTypeDef DRV_I2C_Robot_SendStart(void)
 /**
  * @brief 필요할 때 즉시, 로봇으로부터 현재 상태 읽기. 수동용 함수
  */
-uint8_t DRV_I2C_Robot_ReadStatus(void)
-{
-    uint8_t status = 0;
-    // 로봇 제어기로부터 1바이트 데이터 수신
-    if (HAL_I2C_Master_Receive(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, &status, 1, 10) != HAL_OK) {
-        return 0; // 통신 실패 시 기본값
-    }
-    return status;
-}
-
-
-
-void DRV_I2C_Robot_ReceiveInterrupt(uint8_t *pBuffer)
-{
-    // 인터럽트 방식으로 1바이트 수신 대기 (CPU는 다른 일을 할 수 있음)
-    HAL_I2C_Master_Receive_IT(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, pBuffer, 1);
-}
-
-
-
-void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-    if (hi2c->Instance == I2C1)
-    {
-        if (g_sys_status.robot_i2c_rx_buf == ROBOT_STATUS_DONE) // 0x02 확인
-        {
-            g_sys_status.sensor_robot_done = 1; // FSM이 기다리는 완료 플래그 ON
-        }
-        else
-        {
-            // 원하는 데이터가 아니면 다시 수신 대기
-            DRV_I2C_Robot_ReceiveInterrupt(&g_sys_status.robot_i2c_rx_buf);
-        }
-    }
-}
+//uint8_t DRV_I2C_Robot_ReadStatus(void)
+//{
+//    uint8_t status = 0;
+//    // 로봇 제어기로부터 1바이트 데이터 수신
+//    if (HAL_I2C_Master_Receive(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, &status, 1, 10) != HAL_OK) {
+//        return 0; // 통신 실패 시 기본값
+//    }
+//    return status;
+//}
+//
+//
+//
+//void DRV_I2C_Robot_ReceiveInterrupt(uint8_t *pBuffer)
+//{
+//    // 인터럽트 방식으로 1바이트 수신 대기 (CPU는 다른 일을 할 수 있음)
+//    HAL_I2C_Master_Receive_IT(I2C_MOTOR_DRV, ADDR_I2C_ROBOT, pBuffer, 1);
+//}
+//
+//
+//
+//void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+//{
+//    if (hi2c->Instance == I2C1)
+//    {
+//        if (g_sys_status.robot_i2c_rx_buf == ROBOT_STATUS_DONE) // 0x02 확인
+//        {
+//            g_sys_status.sensor_robot_done = 1; // FSM이 기다리는 완료 플래그 ON
+//        }
+//        else
+//        {
+//            // 원하는 데이터가 아니면 다시 수신 대기
+//            DRV_I2C_Robot_ReceiveInterrupt(&g_sys_status.robot_i2c_rx_buf);
+//        }
+//    }
+//}

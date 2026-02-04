@@ -19,24 +19,15 @@ static uint32_t last_tick_100ms = 0;	// UART 보고, 속도 제어 등
 void TASK_System_Execute(void) {
     uint32_t current_tick = HAL_GetTick();
 
-    // --- 1. 10ms 주기: 실시간 감시 (눈) ---
+    // --- 1. 10ms 주기: 실시간 감시 ---
     if (current_tick - last_tick_10ms >= 10) {
         last_tick_10ms = current_tick;	// 10ms 마다 갱신
-
-        // 모든 센서 상태(PA0, PA1, PA4, PA5, PA10)를 읽어 장부에 기록
         BSP_Sensor_UpdateAll();
     }
 
-    // --- 2. 100ms 주기: 보고 및 실행 (입과 발) ---
+    // --- 2. 100ms 주기: 보고 및 실행 ---
     if (current_tick - last_tick_100ms >= 100) {
         last_tick_100ms = current_tick;	 // 100ms 마다 갱신
-
-        if (g_sys_status.sortState == SORT_ROBOT_WORK) {
-        	// 콜백이 바꿔준 플래그만 체크
-        	if (g_sys_status.sensor_robot_done == 1) {
-                g_sys_status.is_robot_work = 0; // 작업 종료 플래그
-            }
-        }
 
         // 현재 공정 상태(FSM), 리프트 위치 등을 PC 서버로 보고
         DRV_UART_TxReport();

@@ -83,7 +83,7 @@ void APP_FSM_Execute(void) {
 
         // 로봇 잔여 작업 체크
         if (g_sys_status.is_robot_work == 1) {
-                g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+                g_sys_status.mainState = STATE_ROBOT_REST_WORK;
             } else if (!g_sys_status.is_lift_busy) { // 로봇 안하면 리프트 확인 후 IDLE
                     g_sys_status.mainState = STATE_IDLE;
             }
@@ -91,10 +91,10 @@ void APP_FSM_Execute(void) {
         }
 
         // 로봇은 긴급 정지 시에도 하던 작업은 끝내야 함
-    	if (g_sys_status.mainState == STATE_EMERGENCY_ROBOT) {
-    		if (g_sys_status.sensor_robot_done) {
+    	if (g_sys_status.mainState == STATE_ROBOT_REST_WORK) {
+    		if (g_sys_status.signal_robot_done) {
     		    g_sys_status.is_robot_work = 0;
-    		    g_sys_status.sensor_robot_done = 0; // 플래그 클리어
+    		    g_sys_status.signal_robot_done = 0; // 플래그 클리어
     		    g_sys_status.mainState = STATE_IDLE;
     		}
     		return;
@@ -114,7 +114,7 @@ void APP_FSM_Execute(void) {
 
     	// STOP 시에도 로봇이 작업 중이면 마무리 단계로 보냄
     	if (g_sys_status.is_robot_work == 1) {
-    	    g_sys_status.mainState = STATE_EMERGENCY_ROBOT;
+    	    g_sys_status.mainState = STATE_ROBOT_REST_WORK;
     	}
     	else if (!g_sys_status.is_lift_busy) {
     	    g_sys_status.mainState = STATE_IDLE;
@@ -159,8 +159,8 @@ void APP_FSM_Execute(void) {
                     if (item == ITEM_LARGE) {
                     	if (DRV_I2C_Robot_SendStart() == HAL_OK) {
                     	    g_sys_status.is_robot_work = 1;
-                    	    g_sys_status.sensor_robot_done = 0; // 작업 시작 전 완료 플래그 초기화
-                    	    DRV_I2C_Robot_ReceiveInterrupt(&g_sys_status.robot_i2c_rx_buf);
+                    	    g_sys_status.signal_robot_done = 0;
+                    	    g_sys_status.robot_timer = HAL_GetTick();
                     	    g_sys_status.sortState = SORT_ROBOT_WORK;
                         }
                     }
@@ -183,10 +183,14 @@ void APP_FSM_Execute(void) {
 
                 g_sys_status.is_robot_work = 1;
 
+                if (HAL_GetTick() - g_sys_status.robot_timer >= ROBOT_WORK_TIME_MS) { //5000ms
+                    g_sys_status.signal_robot_done = 1; // 장부에 완료 기록
+                }
+
                 // 로봇 작업 완료 신호 시 다시 가동(RUNNING)
-                if (g_sys_status.sensor_robot_done) {
-                    g_sys_status.is_robot_work = 0;
-                    g_sys_status.sensor_robot_done = 0;
+                if (g_sys_status.signal_robot_done == 1) {
+                    g_sys_status.is_robot_work = 0;			// 로봇 쉬는 중
+                    g_sys_status.signal_robot_done = 0;		// 로봇 작동 완료 신호 대기
                     g_sys_status.sortState = SORT_RUNNING;
                 }
                 break;

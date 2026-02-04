@@ -89,7 +89,7 @@ void DRV_UART_TxReport(void) {
     if (g_sys_status.sensor_lift_1f == 0) s |= (1 << 3); // Bit 3: 리프트 1층 도착 (0: 도착, 1: 미도착)
     if (g_sys_status.signal_lift_2f) 	  s |= (1 << 4); // Bit 4: 리프트 2층 도착 (0: 미도착, 1: 도착)
     if (g_sys_status.is_robot_work)  	  s |= (1 << 5); // Bit 5: 로봇 작동중 (0: OFF, 1: ON)
-    if (g_sys_status.sensor_robot_done == 0) s |= (1 << 6); // Bit 6: 로봇완료신호
+    if (g_sys_status.signal_robot_done == 1) s |= (1 << 6); // Bit 6: 로봇완료신호 (0: 동작 중, 1: 동작 완료)
     tx_uart2_data[5] = s;
 
     // 리프트 위치 정보 (Byte 6)
