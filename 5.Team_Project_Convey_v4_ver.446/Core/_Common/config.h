@@ -38,7 +38,7 @@
 
 // 6. [ADDR] I2C 주소
 #define ADDR_I2C_PCA9685     (0x40 << 1)
-#define ADDR_I2C_ROBOT       (0x08 << 1)
+//#define ADDR_I2C_ROBOT     (0x08 << 1)
 
 
 // 7. [HAL] 통신 핸들
