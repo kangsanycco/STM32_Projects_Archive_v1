@@ -20,7 +20,7 @@ static uint8_t tx_uart2_data[8]; // 송신용 장부 (static을 붙여서 TxRepo
 
 void DRV_UART_Init(void) {
     // UART 수신 시작
-	HAL_UART_Receive_IT(UART_PC_SERVER, rx_uart2_data, 8);
+	HAL_UART_Receive_DMA(UART_PC_SERVER, rx_uart2_data, 8);
 }
 
 // 1. 신호 번역용 매핑 테이블 (파일 상단 static 선언)
@@ -87,7 +87,7 @@ void DRV_UART_TxReport(void) {
 
     // 장치 상태 통합 비트 매핑 (Byte 5)
     uint8_t s = 0;
-    if (g_sys_status.is_robot_work)  	     s |= (1 << 5); // Bit 5: 로봇 작동중 (0: OFF, 1: ON)
+    if (g_sys_status.is_robot_work)             s |= (1 << 5); // Bit 5: 로봇 작동중 (0: OFF, 1: ON)
     // if (g_sys_status.signal_robot_done == 1) s |= (1 << 6); // Bit 6: 로봇완료신호 (0: 동작 중, 1: 동작 완료)
     tx_uart2_data[5] = s;
 
@@ -103,6 +103,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART2) {
         DRV_UART_RxUpdate(rx_uart2_data);
 
-        HAL_UART_Receive_IT(UART_PC_SERVER, rx_uart2_data, 8);
+        HAL_UART_Receive_DMA(UART_PC_SERVER, rx_uart2_data, 8);
     }
 }

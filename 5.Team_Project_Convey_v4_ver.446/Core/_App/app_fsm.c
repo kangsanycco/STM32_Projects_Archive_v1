@@ -105,8 +105,6 @@ void APP_FSM_Execute(void) {
                 }
                 break;
 
-                // [함수 요약]
-                // 1. SORT_IDLE 상태에 진입하면, 메인&분류 컨베이어 속도를 0으로 고정
 
             case SORT_RUNNING:
                 if (!g_sys_status.sensor_robot_area) {
