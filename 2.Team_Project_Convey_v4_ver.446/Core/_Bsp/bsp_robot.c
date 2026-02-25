@@ -11,4 +11,6 @@
 
 void BSP_Robot_Start_Trigger(void) {
 	HAL_GPIO_WritePin(PIN_SIGNAL_ROBOT_START, GPIO_PIN_SET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(PIN_SIGNAL_ROBOT_START, GPIO_PIN_RESET);
 }
