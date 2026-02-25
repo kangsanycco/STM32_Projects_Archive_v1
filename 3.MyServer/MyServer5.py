@@ -116,7 +116,7 @@ async def main():
     objects = ua_server.nodes.objects
 
     # 명령 노드
-    n_t_state = await objects.add_variable(ua.NodeId(40001, idx), "TargetState", ua.Variant(1, ua.VariantType.Int64))
+    n_t_state = await objects.add_variable(ua.NodeId(40001, idx), "TargetState", ua.Variant(0, ua.VariantType.Int64))
     n_t_s1 = await objects.add_variable(ua.NodeId(40002, idx), "TargetSpeedMain", ua.Variant(50, ua.VariantType.Int64))
     n_t_s2 = await objects.add_variable(ua.NodeId(40003, idx), "TargetSpeedSort", ua.Variant(50, ua.VariantType.Int64))
     n_t_s3 = await objects.add_variable(ua.NodeId(40004, idx), "TargetSpeedLoad", ua.Variant(50, ua.VariantType.Int64))
