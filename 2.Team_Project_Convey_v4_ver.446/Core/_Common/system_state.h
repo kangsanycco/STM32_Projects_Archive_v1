@@ -95,8 +95,8 @@ typedef struct {
     uint8_t rx_uart2_approved;       	   // 서버로부터의 가동 승인 신호 (Run/Stop)
     uint8_t rx_agv_sort_arrived;      	   // 분류부 AGV 도착 (상차 준비됨)
     uint8_t rx_agv_sort_departed;          // 분류부 AGV 출발 (상차 끝남)
-    //uint8_t rx_agv_load_arrived;     	   // 적재부 AGV 도착 (하차 준비됨)
-    //uint8_t rx_agv_load_departed;        // 적재부 AGV 출발 (하차 끝남)
+    uint8_t rx_agv_load_arrived;     	   // 적재부 AGV 도착 (하차 준비됨)
+    uint8_t rx_agv_load_departed;        // 적재부 AGV 출발 (하차 끝남)
 
     // 5. 구동부 출력 상태 (실제 하드웨어 제어 명령 값 기록)
     uint8_t speed_main_convey;  	       // 모터 1, 2 (메인 라인) PWM 속도 값

@@ -417,7 +417,7 @@ void StartTask03(void *argument)
   for(;;)
   {
 	APP_FSM_Execute();
-    osDelay(80);
+    osDelay(100);
   }
   /* USER CODE END StartTask03 */
 }
