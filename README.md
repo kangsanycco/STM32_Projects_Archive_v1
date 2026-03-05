@@ -2,17 +2,11 @@
 
 코드랩 아카데미 팀 프로젝트 (9인, 2026.01 ~ 2026.02)
 
-🎥 **시연 영상**  
-- [자동화 물류 공정 시스템](https://www.youtube.com/watch?v=MTwg8YZ3Luk)
-- [컨베이어 속도 제어](https://www.youtube.com/watch?v=GTxIRWfuNSQ)
-
 ---
 
 ## 프로젝트 개요
 산업용 컨베이어 기반 자동 물품 분류·이송·로봇 작업 시스템 구현.  
 STM32 중심의 실시간 제어(FreeRTOS, FSM, UART DMA, I2C PWM)를 담당하였으며, PL 역할로 기획·일정 관리·팀 조율 수행
-
-**성과**: 최우수상 수상
 
 ---
 
